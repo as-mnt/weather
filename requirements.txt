@@ -1,0 +1,5 @@
+requests
+matplotlib
+influxdb_client
+seaborn
+scipy
