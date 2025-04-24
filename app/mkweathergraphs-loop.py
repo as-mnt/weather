@@ -20,10 +20,9 @@ INFLUX_BUCKET = os.getenv('INFLUX_BUCKET')
 #VERCEL_BLOB_URL = "https://blob.vercel-storage.com"
 VERCEL_BLOB_URL = os.getenv('VERCEL_BLOB_URL')
 VERCEL_TOKEN = os.getenv('VERCEL_TOKEN')
-WAIT_SECONDS = os.getenv('WAIT_SECONDS')
-#WAIT_SECONDS = int(os.getenv('WAIT_SECONDS'))
+WAIT_SECONDS = int(os.getenv('WAIT_SECONDS'))
 
-print(f"INFLUX_URL {INFLUX_URL}, WAIT_SECONDS {WAIT_SECONDS}")
+#print(f"INFLUX_URL {INFLUX_URL}, WAIT_SECONDS {WAIT_SECONDS}")
 
 client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
 query_api = client.query_api()
