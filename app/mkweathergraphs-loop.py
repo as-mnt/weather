@@ -113,7 +113,7 @@ def loop(wait_seconds):
         print(generate_retro_beautiful_graph("-2w", "weather", "relative_humidity_2m", "hum, %", "Относительная влажность на 2м"))
         time.sleep(wait_seconds)
 
-loop(WAIT_SECONDS)
-#loop(60*60)
+#loop(WAIT_SECONDS)
+loop(60*60)
 
 exit(0)
