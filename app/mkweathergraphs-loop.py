@@ -9,16 +9,21 @@ import datetime
 import time
 from datetime import datetime, timedelta
 
-INFLUX_URL = "http://185.250.148.85:31201"
+#INFLUX_URL = "http://185.250.148.85:31201"
+INFLUX_URL = os.getenv('INFLUX_URL')
 INFLUX_TOKEN = os.getenv('INFLUX_TOKEN')
-INFLUX_ORG = "influxdata"
-INFLUX_BUCKET = "telegraf"
+#INFLUX_ORG = "influxdata"
+INFLUX_ORG = os.getenv('INFLUX_ORG')
+#INFLUX_BUCKET = "telegraf"
+INFLUX_BUCKET = os.getenv('INFLUX_BUCKET')
+#VERCEL_BLOB_URL = "https://blob.vercel-storage.com"
+VERCEL_BLOB_URL = os.getenv('VERCEL_BLOB_URL')
+VERCEL_TOKEN = os.getenv('VERCEL_TOKEN')
+WAIT_SECONDS = int(os.getenv('WAIT_SECONDS'))
 
 client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
 query_api = client.query_api()
 
-VERCEL_BLOB_URL = "https://blob.vercel-storage.com"
-VERCEL_TOKEN = os.getenv('VERCEL_TOKEN')
 
 def upload_to_vercel(filename):
     """Загружаем изображение на Vercel Storage"""
@@ -105,6 +110,7 @@ def loop(wait_seconds):
         print(generate_retro_beautiful_graph("-2w", "weather", "relative_humidity_2m", "hum, %", "Относительная влажность на 2м"))
         time.sleep(wait_seconds)
 
-loop(60*60)
+loop(WAIT_SECONDS)
+#loop(60*60)
 
 exit(0)
