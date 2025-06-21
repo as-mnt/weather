@@ -77,7 +77,7 @@ def generate_beautiful_graph(range_spec, measurement, field, ylabel, title, file
 
     # Добавляем сетку
 
-    ax.grid(which='major', color='darkgray', linestyle='-', linewidth=0.5)
+    ax.grid(which='major', color='darkgray', linestyle='-', linewidth=0.2)
     ax.minorticks_on()
     ax.grid(which='minor', color='lightgray', linestyle=':', linewidth=0.2)
 
