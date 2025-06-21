@@ -14,25 +14,29 @@ INFLUX_URL = os.getenv('INFLUX_URL')
 INFLUX_TOKEN = os.getenv('INFLUX_TOKEN')
 INFLUX_ORG = os.getenv('INFLUX_ORG')
 INFLUX_BUCKET = os.getenv('INFLUX_BUCKET')
-VERCEL_BLOB_URL = os.getenv('VERCEL_BLOB_URL')
-VERCEL_TOKEN = os.getenv('VERCEL_TOKEN')
+NEOCITIES_TOKEN = os.getenv('NEOCITIES_TOKEN')
+NEOCITIES_URL = os.getenv('NEOCITIES_URL')
 WAIT_SECONDS = int(os.getenv('WAIT_SECONDS'))
+WEBHOST_URL = os.getenv('WEBHOST_URL')
+DO_LOOP = os.getenv('LOOP') or 'true'
+GRAPHS_PATH = 'graphs'
+
+print(f"LOOP: {DO_LOOP}\n")
 
 client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
 query_api = client.query_api()
 
-def upload_to_vercel(filename):
-    """Загружаем изображение на Vercel Storage"""
-    with open(filename, "rb") as file:
-        response = requests.put(
-            f"{VERCEL_BLOB_URL}/{filename}",
-            headers={"Authorization": f"Bearer {VERCEL_TOKEN}", "Content-type": "image/png", "x-add-random-suffix": "0"},
-            data=file,
-        )
-#    print(response.json())
+def upload_to_neocities(filename, api_url, api_token, webhost_url):
+    files = {f"{filename}": open(f"{filename}", "rb")}
+    headers = {"Authorization": f"Bearer {api_token}"}
+    response = requests.post(api_url, files=files, headers=headers)
+    fileurl = f"{webhost_url}/{filename}"
     if response.status_code == 200:
-        return response.json()["url"]
-    return None
+        print(f"Graph uploaded: {fileurl}")
+        return fileurl
+    else:
+        print(f"Error: {response.text}")
+        return Nil
 
 def generate_beautiful_graph(range_spec, measurement, field, ylabel, title, filename = None):
     query = f'from(bucket: "{INFLUX_BUCKET}") |> range({range_spec}) \
@@ -72,22 +76,26 @@ def generate_beautiful_graph(range_spec, measurement, field, ylabel, title, file
     plt.yticks(fontsize=4)
 
     # Добавляем сетку
-    ax.grid(True, linestyle="--", alpha=0.5)
+
+    ax.grid(which='major', color='darkgray', linestyle='-', linewidth=0.5)
+    ax.minorticks_on()
+    ax.grid(which='minor', color='lightgray', linestyle=':', linewidth=0.2)
 
     # Сохраняем картинку
     if not filename:
-        filename = f"{measurement}-{field}.png"
+        filename = f"{GRAPHS_PATH}/{measurement}-{field}.png"
     plt.savefig(filename, dpi=200, bbox_inches="tight")  # Высокое качество
 
-    # Заливаем на Vercel
-    url = upload_to_vercel(filename)
+    # Заливаем на neocities
+
+    url = upload_to_neocities(f"{filename}", NEOCITIES_URL, NEOCITIES_TOKEN, WEBHOST_URL)
     if url:
         return {"status": "success", "image_url": url}
     else:
         return {"status": "error", "message": "Failed to upload"}, 500
 
 def generate_retro_beautiful_graph(stepback, measurement, field, ylabel, title):
-    return generate_beautiful_graph(f"start: {stepback}", measurement, field, ylabel, title, f"{measurement}-{field}-{stepback}.png")
+    return generate_beautiful_graph(f"start: {stepback}", measurement, field, ylabel, title, f"{GRAPHS_PATH}/{measurement}-{field}-{stepback}.png")
 
 def current_timestamp():
     return datetime.now().strftime("%Y%m%d-%H%M%s")
@@ -104,6 +112,9 @@ def loop(wait_seconds):
         print(generate_retro_beautiful_graph("-2w", "weather", "temperature_2m", "t, C", "Температура воздуха на 2м"))
         print(generate_retro_beautiful_graph("-2w", "weather", "surface_pressure", "p, hPa", "Атмосферное давление у земли"))
         print(generate_retro_beautiful_graph("-2w", "weather", "relative_humidity_2m", "hum, %", "Относительная влажность на 2м"))
+        if DO_LOOP == 'false':
+            print("LOOP false, exiting\n")
+            exit(0)
         time.sleep(wait_seconds)
 
 loop(WAIT_SECONDS)
