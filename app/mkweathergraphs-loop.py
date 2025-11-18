@@ -19,6 +19,7 @@ NEOCITIES_URL = os.getenv('NEOCITIES_URL')
 WAIT_SECONDS = int(os.getenv('WAIT_SECONDS'))
 WEBHOST_URL = os.getenv('WEBHOST_URL')
 DO_LOOP = os.getenv('LOOP') or 'true'
+DEBUG = os.getenv('DEBUG') or 'false'
 GRAPHS_PATH = 'graphs'
 
 print(f"LOOP: {DO_LOOP}\n")
@@ -45,6 +46,7 @@ def generate_beautiful_graph(range_spec, measurement, field, ylabel, title, file
                                               |> aggregateWindow(every: 5m, fn: mean, createEmpty: false) \
                                               |> yield(name: "mean")'
     tables = query_api.query(query)
+    if DEBUG == 'true': print(tables.to_json())
     times, values = [], []
     for table in tables:
         for record in table.records:
@@ -59,7 +61,8 @@ def generate_beautiful_graph(range_spec, measurement, field, ylabel, title, file
 
     # Строим линию
     ax.plot(times, values_smooth, linestyle="-", 
-            color="#FF5733", linewidth=1, markerfacecolor="white",
+            color="#FF5733", linewidth=0.5, markerfacecolor="white",
+#            color="#FF5733", linewidth=1, markerfacecolor="white",
             markeredgewidth=2, markeredgecolor="#FF5733", alpha=0.9)
 
     # Настройки осей
