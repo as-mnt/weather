@@ -112,9 +112,11 @@ def loop(wait_seconds):
         print(generate_retro_beautiful_graph("-2d", "weather", "temperature_2m", "t, C", "Температура воздуха на 2м"))
         print(generate_retro_beautiful_graph("-2d", "weather", "surface_pressure", "p, hPa", "Атмосферное давление у земли"))
         print(generate_retro_beautiful_graph("-2d", "weather", "relative_humidity_2m", "hum, %", "Относительная влажность на 2м"))
+        print(generate_retro_beautiful_graph("-2d", "pollution", "components_pm2_5", "pm25", "Загрязнение частицами pm2,5"))
         print(generate_retro_beautiful_graph("-2w", "weather", "temperature_2m", "t, C", "Температура воздуха на 2м"))
         print(generate_retro_beautiful_graph("-2w", "weather", "surface_pressure", "p, hPa", "Атмосферное давление у земли"))
         print(generate_retro_beautiful_graph("-2w", "weather", "relative_humidity_2m", "hum, %", "Относительная влажность на 2м"))
+        print(generate_retro_beautiful_graph("-2w", "pollution", "components_pm2_5", "pm25", "Загрязнение частицами pm2,5"))
         if DO_LOOP == 'false':
             print("LOOP false, exiting\n")
             exit(0)
