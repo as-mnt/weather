@@ -118,7 +118,7 @@ def loop(wait_seconds):
         print(generate_retro_beautiful_graph("-2w", "weather", "surface_pressure", "p, hPa", "Атмосферное давление у земли"))
         print(generate_retro_beautiful_graph("-2w", "weather", "relative_humidity_2m", "hum, %", "Относительная влажность на 2м"))
         print(generate_retro_beautiful_graph("-2w", "pollution", "components_pm2_5", "pm25", "Загрязнение частицами pm2,5"))
-        print(upload_to_neocities(INDEX_HTML, NEOCITIES_URL, NEOCITIES_TOKEN, WEBHOST_URL)
+        print(upload_to_neocities(INDEX_HTML, NEOCITIES_URL, NEOCITIES_TOKEN, WEBHOST_URL))
         if DO_LOOP == 'false':
             print("LOOP false, exiting\n")
             exit(0)
