@@ -21,7 +21,7 @@ WEBHOST_URL = os.getenv('WEBHOST_URL')
 DO_LOOP = os.getenv('LOOP') or 'true'
 DEBUG = os.getenv('DEBUG') or 'false'
 GRAPHS_PATH = 'graphs'
-INDEX_HTML = 'html/index.html'
+INDEX_HTML = 'index.html'
 
 print(f"LOOP: {DO_LOOP}\n")
 
