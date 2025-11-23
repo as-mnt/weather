@@ -28,6 +28,9 @@ env:
         name: weather-secret
         key: INFLUX_TOKEN
 
+configmap:
+  name: weather-config
+
 service:
   enabled: false
 serviceAccount:
@@ -91,8 +94,7 @@ config:
   outputs:
     - influxdb_v2:
         urls:
-          - "http://185.200.177.95:31201"
-#          - "http://influx-influxdb2:80"
+          - "http://influx-influxdb2:80"
         organization: "influxdata"
         bucket: "weather"
         token: $INFLUXDB_TOKEN
