@@ -1,0 +1,185 @@
+replicaCount: 1
+image:
+  repo: "docker.io/library/telegraf"
+  tag: "1.32-alpine"
+  pullPolicy: IfNotPresent
+podAnnotations: {}
+podLabels: {}
+imagePullSecrets: []
+args: []
+# The name of a secret in the same kubernetes namespace which contains values to
+# be added to the environment (must be manually created)
+# This can be useful for auth tokens, etc.
+
+# envFromSecret: "telegraf-tokens"
+env:
+  - name: HOSTNAME
+    value: "telegraf-polling-service"
+
+env:
+  - name: OPENWEATHER_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: weather-secret
+        key: OPENWEATHERMAP_TOKEN
+  - name: INFLUXDB_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: weather-secret
+        key: INFLUX_TOKEN
+
+service:
+  enabled: false
+serviceAccount:
+  create: false
+  name: "default"
+
+telegraf:
+  image:
+    repository: alpine
+    tag: 3.2
+  serviceAccount: default
+  securityContext:
+    capabilities:
+      add: ["NET_RAW"]
+    seccompProfile:
+      type: RuntimeDefault
+  initContainers:
+    - name: set-mtu
+      image: busybox
+      command: ['sh', '-c', 'ip link set dev eth0 mtu 1450']
+      securityContext:
+        capabilities:
+          add: ["NET_ADMIN"]        
+
+resources: {}
+# requests:
+#   memory: 128Mi
+#   cpu: 100m
+# limits:
+#   memory: 128Mi
+#   cpu: 100m
+
+nodeSelector: {}
+tolerations: []
+updateStrategy: {}
+
+config:
+  agent:
+    interval: "60s"
+    round_interval: true
+    metric_batch_size: 1000
+    metric_buffer_limit: 10000
+    collection_jitter: "0s"
+    flush_interval: "10s"
+    flush_jitter: "0s"
+    precision: ""
+    debug: false
+    quiet: false
+    logfile: ""
+    hostname: "$HOSTNAME"
+    omit_hostname: false
+  processors:
+    - enum:
+        mapping:
+          field: "status"
+          dest: "status_code"
+          value_mappings:
+            healthy: 1
+            problem: 2
+            critical: 3
+  outputs:
+    - influxdb_v2:
+        urls:
+          - "http://185.200.177.95:31201"
+#          - "http://influx-influxdb2:80"
+        organization: "influxdata"
+        bucket: "weather"
+        token: $INFLUXDB_TOKEN
+    - file:
+        files: 
+          - "stdout"
+        data_format: "influx"
+  inputs:
+    - http:
+        urls:
+          - "http://api.open-meteo.com/v1/forecast?latitude=42.82&longitude=74.6&current=temperature_2m,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&forecast_days=1"
+        name_override: "weather"
+        tagexclude: ["url", "host"]
+        data_format: "json"
+        json_query: "current"    
+    - http:
+        urls:
+          - "http://api.openweathermap.org/data/2.5/air_pollution?lat=42.820588&lon=74.616051&appid=$OPENWEATHER_API_KEY"
+        name_override: "pollution"
+        data_format: "json"
+        json_query: "list"
+metrics:
+  health:
+    enabled: false
+    service_address: "http://:8888"
+    threshold: 5000.0
+  internal:
+    enabled: true
+    collect_memstats: false
+# Lifecycle hooks
+hooks:
+  postStart: ["/bin/sh", "-c", "echo Telegraf started"]
+  preStop: ["/bin/sh", "-c", "sleep 60"]
+
+## Pod disruption budget configuration
+##
+pdb:
+  ## Specifies whether a Pod disruption budget should be created
+  ##
+  create: true
+  minAvailable: 1
+  # maxUnavailable: 1
+
+# Указывает, что нужно полностью контролировать DNS
+#podSpec:
+#  dnsPolicy: "None"
+#  dnsConfig:
+#    nameservers:
+#      - "8.8.8.8"
+#      - "1.1.1.1"
+#    searches:
+#      - "svc.cluster.local"
+#      - "cluster.local"
+#    options:
+#      - name: "ndots"
+#        value: "2"
+#      - name: "timeout"
+#        value: "2"
+
+#podDns:
+#  enabled: true
+#  enabled: true
+#  nameservers:
+#    - "10.96.0.10"
+#  searches:
+#    - "default.svc.cluster.local"
+#    - "svc.cluster.local"
+#    - "cluster.local"
+#  options:
+#    - name: "ndots"
+#      value: "1"
+#    - name: "timeout"
+#      value: "2"
+
+# Указывает, что нужно полностью контролировать DNS
+
+podSpec:
+  dnsPolicy: "None"
+  dnsConfig:
+    nameservers:
+      - "10.96.0.10"
+    searches:
+      - "default.svc.cluster.local"
+      - "svc.cluster.local"
+      - "cluster.local"
+    options:
+      - name: "ndots"
+        value: "1"
+      - name: "timeout"
+        value: "2"

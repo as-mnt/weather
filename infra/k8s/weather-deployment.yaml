@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather
+  template:
+    metadata:
+      labels:
+        app: weather
+    spec:
+      containers:
+        - name: weather
+          image: asmnt/weather:latest
+          envFrom:
+          - configMapRef:
+              name: weather-config
+          env:
+            - name: INFLUX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: weather-secret
+                  key: influx_token
+            - name: NEOCITIES_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: weather-secret
+                  key: neocities_token

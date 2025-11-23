@@ -3,3 +3,14 @@ scripts
 .git
 graphs
 *bak
+.secrets
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+build/
+develop-eggs/

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "weather.fullname" . }}
+  labels:
+    {{- include "weather.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "weather.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "weather.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if and .Values.podDns .Values.podDns.enabled }}
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          {{- range .Values.podDns.nameservers }}
+          - {{ . | quote }}
+          {{- end }}
+        {{- if .Values.podDns.searches }}
+        searches:
+          {{- range .Values.podDns.searches }}
+          - {{ . | quote }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.podDns.options }}
+        options:
+          {{- range .Values.podDns.options }}
+          - name: {{ .name | quote }}
+            {{- if .value }}
+            value: {{ .value | quote }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secrets.name }}
+            - configMapRef:
+                name: {{ .Values.configmap.name }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: graphs
+              mountPath: /app/public
+      volumes:
+        - name: graphs
+          emptyDir: {}

@@ -1,0 +1,19 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/dnsPolicy",
+    "value": "None"
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/dnsConfig",
+    "value": {
+      "nameservers": ["10.96.0.10"],
+      "searches": ["default.svc.cluster.local", "svc.cluster.local", "cluster.local"],
+      "options": [
+        {"name": "ndots", "value": "1"},
+        {"name": "timeout", "value": "2"}
+      ]
+    }
+  }
+]

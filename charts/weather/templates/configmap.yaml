@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  #  name: weather-config
+  name: {{ include "weather.fullname" . }}-config    
+data:
+  #  INFLUX_URL: "http://185.250.148.85:31201"
+  INFLUX_URL: "http://185.200.177.95:31201"
+  INFLUX_ORG: "influxdata"
+  INFLUX_BUCKET: "weather"
+  WAIT_SECONDS: "3600"
+  NEOCITIES_URL: "https://neocities.org/api/upload"
+  WEBHOST_URL: "https://exograph.neocities.org"
+  LOOP: "true"
+  DEBUG: "true"
