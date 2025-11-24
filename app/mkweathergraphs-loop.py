@@ -47,7 +47,7 @@ def generate_beautiful_graph(range_spec, measurement, field, ylabel, title, file
                                               |> aggregateWindow(every: 5m, fn: mean, createEmpty: false) \
                                               |> yield(name: "mean")'
     tables = query_api.query(query)
-    if DEBUG == 'true': print(tables.to_json())
+#    if DEBUG == 'true': print(tables.to_json())
     times, values = [], []
     for table in tables:
         for record in table.records:
@@ -88,11 +88,15 @@ def generate_beautiful_graph(range_spec, measurement, field, ylabel, title, file
     # Сохраняем картинку
     if not filename:
         filename = f"{GRAPHS_PATH}/{measurement}-{field}.png"
+    if DEBUG == 'true': print(f"{current_timestamp()} Saving to {filename}")
     plt.savefig(filename, dpi=200, bbox_inches="tight")  # Высокое качество
+    if DEBUG == 'true': print(f"{current_timestamp()} Saved to {filename}")
 
     # Заливаем на neocities
 
+    if DEBUG == 'true': print(f"{current_timestamp()} Uploading {filename}")
     url = upload_to_neocities(f"{filename}", NEOCITIES_URL, NEOCITIES_TOKEN, WEBHOST_URL)
+    if DEBUG == 'true': print(f"{current_timestamp()} Uploaded {filename}")
     if url:
         return {"status": "success", "image_url": url}
     else:
