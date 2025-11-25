@@ -2,7 +2,8 @@
 image:
   repository: asmnt/weather
   tag: "latest"          # будет переопределяться в CI
-  pullPolicy: IfNotPresent
+#  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 # Секреты (имя существующего Kubernetes Secret)
 secrets:
@@ -19,13 +20,13 @@ configmap:
   name: weather-config
 
 # Ресурсы (опционально)
-resources:
-  limits:
-    memory: "128Mi"
-    cpu: "100m"
-  requests:
-    memory: "64Mi"
-    cpu: "50m"
+#resources:
+#  limits:
+#    memory: "128Mi"
+#    cpu: "100m"
+#  requests:
+#    memory: "64Mi"
+#    cpu: "50m"
 
 #podDns:
 #  enabled: true
