@@ -114,6 +114,7 @@ config:
         urls:
           - "http://api.openweathermap.org/data/2.5/air_pollution?lat=42.820588&lon=74.616051&appid=$OPENWEATHER_API_KEY"
         name_override: "pollution"
+        tagexclude: ["url", "host"]
         data_format: "json"
         json_query: "list"
 metrics:
