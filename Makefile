@@ -6,8 +6,8 @@
 #NAMESPACE      ?= monitoring
 NAMESPACE      ?= default
 IMAGE_REPO     ?= asmnt/weather
-#IMAGE_TAG      ?= dev-$(shell git rev-parse --short HEAD)
-IMAGE_TAG      ?= latest
+IMAGE_TAG      ?= dev-$(shell git rev-parse --short HEAD)
+#IMAGE_TAG      ?= latest
 CHART_PATH     ?= ./charts/weather
 SECRETS_FILE   ?= .secrets/secrets.env
 
@@ -102,6 +102,8 @@ deploy: check-env
 		--create-namespace \
 		--set image.tag="$(IMAGE_TAG)" \
 		--wait
+
+
 	helm upgrade --install telegraf \
 		--namespace "$(NAMESPACE)" \
 	  influxdata/telegraf -f infra/telegraf/values-meteo.yaml
