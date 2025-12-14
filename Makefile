@@ -10,6 +10,7 @@ IMAGE_TAG      ?= dev-$(shell git rev-parse --short HEAD)
 #IMAGE_TAG      ?= latest
 CHART_PATH     ?= ./charts/weather
 SECRETS_FILE   ?= .secrets/secrets.env
+TELEGRAM_SECRETS_FILE   ?= .secrets/secrets-telegram.env
 
 # Пути к файлам (настройте под вашу структуру)
 APP_MAIN       ?= app/mkweathergraphs-loop.py
@@ -64,6 +65,14 @@ secrets:
 	kubectl create secret generic weather-secrets \
 		--namespace "$(NAMESPACE)" \
 		--from-env-file="$(SECRETS_FILE)"
+	
+	@echo "$(GREEN)📦 Создаём Secret 'telegram-credentials' в namespace '$(NAMESPACE)'$(RESET)"
+	kubectl delete secret telegram-credentials --namespace "$(NAMESPACE)" --ignore-not-found
+	kubectl create secret generic telegram-credentials \
+    --namespace "$(NAMESPACE)" \
+    --from-env-file="$(TELEGRAM_SECRETS_FILE)"
+#  --from-literal=BOT_TOKEN="123456:ABC..." \
+#  --from-literal=CHAT_ID="-1001234567890"
 
 # Обновление ConfigMap из файла
 sync-config:
@@ -129,3 +138,26 @@ undeploy:
 	kubectl delete configmap $(CONFIGMAP_NAME) --namespace "$(NAMESPACE)" --ignore-not-found
 	helm uninstall telegraf --namespace "$(NAMESPACE)"
 
+# === Telegram Proxy ===
+PROXY_IMAGE_REPO ?= asmnt/telegram-proxy
+PROXY_IMAGE_TAG  ?= dev-$(shell git rev-parse --short HEAD)
+
+build-proxy:
+	docker build -t $(PROXY_IMAGE_REPO):$(PROXY_IMAGE_TAG) ./telegram-proxy
+
+push-proxy: build-proxy
+	docker push $(PROXY_IMAGE_REPO):$(PROXY_IMAGE_TAG)
+
+undeploy-proxy:
+	helm uninstall telegram-proxy --namespace "$(NAMESPACE)"
+
+deploy-proxy:
+	helm upgrade --install telegram-proxy ./charts/telegram-proxy \
+		--namespace "$(NAMESPACE)" \
+		--set image.tag="$(PROXY_IMAGE_TAG)" \
+		--wait
+
+proxy-logs:
+	kubectl logs deploy/telegram-proxy -n "$(NAMESPACE)" --tail=100 -f
+
+deploy-all: deploy deploy-proxy

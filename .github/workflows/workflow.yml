@@ -21,10 +21,29 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Build and push
+#      - name: Build and push
+#        uses: docker/build-push-action@v4
+#        with:
+#          context: .
+#          push: true
+#          tags: |
+#            asmnt/weather:dev-${{ steps.short-sha.outputs.sha_short }}
+
+
+      - name: Build and push weather
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./app
           push: true
           tags: |
+            asmnt/weather:latest
             asmnt/weather:dev-${{ steps.short-sha.outputs.sha_short }}
+
+      - name: Build and push telegram-proxy
+        uses: docker/build-push-action@v4
+        with:
+          context: ./telegram-proxy
+          push: true
+          tags: |
+            asmnt/telegram-proxy:latest
+            asmnt/telegram-proxy:dev-${{ steps.short-sha.outputs.sha_short }}

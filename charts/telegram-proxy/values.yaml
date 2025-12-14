@@ -1,0 +1,11 @@
+image:
+  repository: asmnt/telegram-proxy
+  tag: latest
+#  pullPolicy: IfNotPresent
+  pullPolicy: Always
+
+secrets:
+  name: telegram-credentials  # ← должен существовать в кластере
+
+service:
+  port: 8080
