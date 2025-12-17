@@ -161,3 +161,16 @@ proxy-logs:
 	kubectl logs deploy/telegram-proxy -n "$(NAMESPACE)" --tail=100 -f
 
 deploy-all: deploy deploy-proxy
+
+
+# Prometheus
+deploy-prometheus:
+	helm upgrade --install prometheus prometheus-community/prometheus \
+		-n "$(NAMESPACE)" \
+		--create-namespace \
+		-f infra/prometheus/values.yaml
+
+undeploy-prometheus:
+	helm uninstall prometheus --namespace "$(NAMESPACE)"
+
+deploy-monitoring: deploy-telegraf deploy-prometheus

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-weather-rules
+  namespace: default
+data:
+  weather-alerts.yaml: |
+    groups:
+    - name: weather-alerts
+      rules:
+      - alert: NoDataFromTelegraf
+        expr: absent(weather_temperature_2m{job="telegraf"})
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No data from Telegraf for last 15 minutes"
+      - alert: HighPM25
+        expr: pollution_components_pm2_5{job="telegraf"} > 25
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High PM2.5 level: {{ $value }} ug/m3 (normal <= 25)"
+
+
+#        expr: absent(weather_temperature_2m{job="telegraf"}) or changes(weather_temperature_2m{job="telegraf"}[10m]) == 0

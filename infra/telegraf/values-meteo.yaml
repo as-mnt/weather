@@ -98,6 +98,11 @@ config:
         organization: "influxdata"
         bucket: "weather"
         token: $INFLUXDB_TOKEN
+    - prometheus_client:
+        listen: ":9273"
+        path: "/metrics"
+        expiration_interval: "60s"
+        collectors_exclude: ["gocollector", "process"]          
     - file:
         files: 
           - "stdout"

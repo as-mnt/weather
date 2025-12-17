@@ -1,0 +1,66 @@
+# Убираем server.config — он конфликтует с serverFiles
+server:
+  persistentVolume:
+    enabled: false
+  retention: "6h"
+  global:
+    scrape_interval: 30s
+#    resolve_timeout: 5m
+
+# Alertmanager — без изменений
+alertmanager:
+  enabled: true
+  persistentVolume:
+    enabled: true
+    size: 2Gi
+    storageClass: ""
+  alertmanagerSpec:
+    config:
+      global:
+        resolve_timeout: 5m
+      route:
+        receiver: 'telegram'
+        group_by: ['alertname']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 1h
+      receivers:
+        - name: 'telegram'
+          webhook_configs:
+            - url: 'http://telegram-proxy:8080/alert'
+              send_resolved: true
+
+# Единая конфигурация
+serverFiles:
+  # Основной конфиг Prometheus
+  prometheus.yml:
+    rule_files:
+      - /etc/prometheus/rules.yml
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: 'telegraf'
+        static_configs:
+          - targets: ['telegraf:9273']
+
+  # Правила алертинга
+  rules.yml:
+    groups:
+      - name: weather-alerts
+        rules:
+          - alert: NoDataFromTelegraf
+            expr: absent(weather_temperature_2m{job="telegraf"}) or changes(weather_temperature_2m{job="telegraf"}[10m]) == 0
+            for: 15m
+            labels:
+              severity: critical
+            annotations:
+              summary: "⚠️ Нет данных от Telegraf за последние 15 минут"
+
+          - alert: HighPM25
+            expr: pollution_components_pm2_5{job="telegraf"} > 25
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "🌫️ Высокий уровень PM2.5: {{ $value }} мкг/м³ (норма ≤ 25)"

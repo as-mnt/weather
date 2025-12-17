@@ -1,0 +1,31 @@
+# Prometheus Server
+server:
+  persistentVolume:
+    enabled: false
+  retention: "7d"
+
+# Alertmanager (важно: отдельный блок!)
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          # Отключаем PVC
+          resources:
+            requests:
+              storage: "0Gi"  # ← хитрость: 0Gi = не использовать PV
+    config:
+      global:
+        resolve_timeout: 5m
+      route:
+        receiver: 'telegram'
+        group_by: ['alertname']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 1h
+      receivers:
+        - name: 'telegram'
+          webhook_configs:
+            - url: 'http://telegram-proxy:8080/alert'
+              send_resolved: true

@@ -1,0 +1,18 @@
+groups:
+- name: weather-alerts
+  rules:
+  - alert: NoData
+    expr: count(up{job="telegraf"}) == 0 or changes(weather_temperature_2m[15m]) == 0
+    for: 15m
+    labels:
+      severity: critical
+    annotations:
+      summary: "⚠️ Нет данных от Telegraf за последние 15 минут"
+
+  - alert: HighPollution
+    expr: pollution_components_pm2_5 > 25
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "🌫️ Высокое загрязнение: PM2.5 > 25 мкг/м³"
