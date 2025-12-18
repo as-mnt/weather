@@ -165,6 +165,7 @@ deploy-all: deploy deploy-proxy
 
 # Prometheus
 deploy-prometheus:
+	kubectl apply -n "$(NAMESPACE)" -f infra/prometheus/weather-alerts-configmap.yaml
 	helm upgrade --install prometheus prometheus-community/prometheus \
 		-n "$(NAMESPACE)" \
 		--create-namespace \
