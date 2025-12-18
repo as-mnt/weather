@@ -52,6 +52,21 @@ spec:
           volumeMounts:
             - name: graphs
               mountPath: /app/public
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "test -f /app/index.html && test -z \"$(find /app/graphs -name '*.png' -mmin +62)\""]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "test -f /app/index.html && test -n \"$(ls /app/graphs/*.png 2>/dev/null)\""]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 2
       volumes:
         - name: graphs
           emptyDir: {}

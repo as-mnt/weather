@@ -20,6 +20,9 @@ serverFiles:
       - job_name: 'telegraf'
         static_configs:
           - targets: ['telegraf:9273']
+      - job_name: 'kube-state-metrics'
+        static_configs:
+          - targets: ['prometheus-kube-state-metrics:8080']
 
 alertmanager:
   enabled: true

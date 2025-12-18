@@ -22,6 +22,12 @@ data:
           severity: warning
         annotations:
           summary: "High PM2.5 level: {{ $value }} ug/m3 (normal <= 25)"
-
+      - alert: WeatherPodFrequentRestarts
+        expr: changes(kube_pod_container_status_restarts_total{pod=~"weather-.*"}[1h]) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod weather перезапускается чаще 2 раз в час"
 
 #        expr: absent(weather_temperature_2m{job="telegraf"}) or changes(weather_temperature_2m{job="telegraf"}[10m]) == 0
