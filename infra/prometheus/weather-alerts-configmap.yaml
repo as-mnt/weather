@@ -9,12 +9,12 @@ data:
     - name: weather-alerts
       rules:
       - alert: NoDataFromTelegraf
-        expr: absent(weather_temperature_2m{job="telegraf"})
-        for: 1m
+        expr: absent(weather_temperature_2m{job="telegraf"}) or changes(weather_temperature_2m{job="telegraf"}[10m]) == 0
+        for: 1h
         labels:
           severity: critical
         annotations:
-          summary: "No data from Telegraf for last 15 minutes"
+          summary: "No data from Telegraf for least 1 hour"
       - alert: HighPM25
         expr: pollution_components_pm2_5{job="telegraf"} > 25
         for: 10m
