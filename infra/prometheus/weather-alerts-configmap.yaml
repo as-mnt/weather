@@ -9,7 +9,7 @@ data:
     - name: weather-alerts
       rules:
       - alert: NoDataFromTelegraf
-        expr: absent(weather_temperature_2m{job="telegraf"}) or changes(weather_temperature_2m{job="telegraf"}[10m]) == 0
+        expr: absent(weather_temperature_2m{job="telegraf"}) or changes(weather_temperature_2m{job="telegraf"}[3h]) == 0
         for: 1h
         labels:
           severity: critical
