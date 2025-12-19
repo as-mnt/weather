@@ -170,8 +170,12 @@ deploy-prometheus:
 		-n "$(NAMESPACE)" \
 		--create-namespace \
 		-f infra/prometheus/values.yaml
+#	helm install prometheus-blackbox-exporter prometheus-community/prometheus-blackbox-exporter \
+#		-n "$(NAMESPACE)" \
+#    --set service.type=ClusterIP
 
 undeploy-prometheus:
 	helm uninstall prometheus --namespace "$(NAMESPACE)"
+	helm uninstall prometheus-blackbox-exporter --namespace "$(NAMESPACE)"
 
 deploy-monitoring: deploy-telegraf deploy-prometheus

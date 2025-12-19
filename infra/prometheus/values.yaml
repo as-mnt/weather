@@ -23,6 +23,21 @@ serverFiles:
       - job_name: 'kube-state-metrics'
         static_configs:
           - targets: ['prometheus-kube-state-metrics:8080']
+      - job_name: 'weather-website'
+        scrape_interval: 30m
+        metrics_path: /probe
+        params:
+          module: [http_2xx]
+        static_configs:
+          - targets:
+              - https://exograph.neocities.org/graphs/weather-temperature_2m--2d.png
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: prometheus-blackbox-exporter:9115
 
 alertmanager:
   enabled: true
@@ -44,3 +59,8 @@ alertmanager:
         webhook_configs:
           - url: 'http://telegram-proxy:8080/alert'
             send_resolved: true
+
+#prometheus-blackbox-exporter:
+#  enabled: true
+#  service:
+#    type: ClusterIP

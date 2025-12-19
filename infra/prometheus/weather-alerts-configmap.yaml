@@ -29,5 +29,10 @@ data:
           severity: warning
         annotations:
           summary: "Pod weather перезапускается чаще 2 раз в час"
-
-#        expr: absent(weather_temperature_2m{job="telegraf"}) or changes(weather_temperature_2m{job="telegraf"}[10m]) == 0
+      - alert: WeatherPipelineStalled
+        expr: probe_success{job="weather-website"} == 0
+        for: 62m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Нет данных на хостинге более 62 минут"
