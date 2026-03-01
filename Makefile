@@ -13,7 +13,7 @@ SECRETS_FILE   ?= .secrets/secrets.env
 TELEGRAM_SECRETS_FILE   ?= .secrets/secrets-telegram.env
 
 # Пути к файлам (настройте под вашу структуру)
-APP_MAIN       ?= app/mkweathergraphs-loop.py
+APP_MAIN       ?= app/mkweathergraphs_loop.py
 CONFIG_SOURCE  ?= public/index.html     # файл, который будет в ConfigMap
 CONFIGMAP_NAME ?= weather-config
 
@@ -171,8 +171,8 @@ deploy-prometheus:
 		--create-namespace \
 		-f infra/prometheus/values.yaml
 	helm upgrade --install prometheus-blackbox-exporter prometheus-community/prometheus-blackbox-exporter \
-    -n "$(NAMESPACE)" \
-    --set service.type=ClusterIP
+		-n "$(NAMESPACE)" \
+		-f infra/prometheus/blackbox-values.yaml
 
 undeploy-prometheus:
 	helm uninstall prometheus --namespace "$(NAMESPACE)"
