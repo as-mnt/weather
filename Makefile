@@ -86,15 +86,18 @@ sync-config:
 		--from-file=$(CONFIG_SOURCE) \
 		--dry-run=client -o yaml | kubectl apply -f -
 
-# Запуск базовых тестов (проверка синтаксиса и импортов)
+# Запуск тестов
 test:
 	@if [ ! -f "$(APP_MAIN)" ]; then \
 		echo "❌ Основной скрипт не найден: $(APP_MAIN)"; \
 		exit 1; \
 	fi
-	@echo "$(GREEN)🧪 Запуск тестов для $(APP_MAIN)$(RESET)"
-	python -m py_compile $(APP_MAIN)
+	@echo "$(GREEN)🧪 Проверка синтаксиса $(APP_MAIN)$(RESET)"
+	@python3 -m py_compile $(APP_MAIN)
 	@echo "$(GREEN)✅ Синтаксис корректен$(RESET)"
+	@echo "$(GREEN)🧪 Запуск pytest для $(APP_MAIN)$(RESET)"
+	@export PYTHONPATH=$$(pwd)/app && pytest app/test_weather.py
+	@echo "$(GREEN)✅ Все тесты пройдены$(RESET)"
 
 # Деплой
 deploy-local: check-env
