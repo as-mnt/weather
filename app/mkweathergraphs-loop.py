@@ -91,6 +91,7 @@ def generate_beautiful_graph(range_spec, measurement, field, ylabel, title, file
     if DEBUG == 'true': print(f"{current_timestamp()} Saving to {filename}")
     plt.savefig(filename, dpi=200, bbox_inches="tight")  # Высокое качество
     if DEBUG == 'true': print(f"{current_timestamp()} Saved to {filename}")
+    plt.close(fig)  # Close the figure to free memory
 
     # Заливаем на neocities
 

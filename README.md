@@ -100,7 +100,7 @@ A lightweight Go microservice acting as an Alertmanager-to-Telegram bridge.
 ---
 
 ## 📋 Roadmap
-- [ ] Implement `plt.close()` in Python to prevent memory leaks.
+- [x] Implement `plt.close()` in Python to prevent memory leaks.
 - [ ] Add basic authentication to the Telegram Proxy endpoint.
 - [ ] Optimize the Docker image size for the Go proxy.
 - [ ] Integrate Grafana for real-time interactive dashboards.
