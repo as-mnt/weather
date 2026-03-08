@@ -4,14 +4,12 @@ This file maintains the state and roadmap for the Weather Monitoring project. It
 
 ## 📝 Current State (Last Updated: Mar 8, 2026)
 - **Version:** v0.2.1 (Stable).
-- **Bugfix:** Added support for legacy data (without `location` tag) for Bishkek.
-- **Multi-City Monitoring:** Added Kazan and Vladivostok alongside Bishkek.
-- **Dynamic Content:** Automatic generation of city-specific `index.html` and subdirectory structure.
-- **Telegraf Config:** Updated to collect data for 3 locations with corresponding tags.
-- **Python App:** Modified to handle multiple locations with specific timezone offsets and output file naming. Legacy support for Bishkek filenames maintained.
-- **Web UI:** Updated `index.html` with links to city-specific dashboards.
-- **Monitoring Audit:** Fixed metric name `probe_last_modified_timestamp_seconds`. Deployed Blackbox Exporter with `http_2xx_with_age` module.
-- **Uncommitted Changes:** None (all infra changes staged and committed).
+- **Multi-City Monitoring:** Active for Bishkek, Kazan, and Vladivostok.
+- **Data Fix:** Queries for Bishkek now include legacy data without the `location` tag.
+- **Visualization:** Scientific notation disabled on Y-axis for better readability of pressure graphs.
+- **Dynamic Content:** Automatic generation of city-specific `index.html` in `/Bishkek/`, `/Kazan/`, and `/Vladivostok/`.
+- **Infrastructure:** Telegraf (v3 tags), Prometheus, and Blackbox Exporter fully configured and deployed.
+- **Monitoring Audit:** Metric `probe_last_modified_timestamp_seconds` used for staleness alerts.
 
 ## 🛠 Tech Stack
 - **Backend:** Python 3.9 (Matplotlib, Seaborn, InfluxDB Client).
