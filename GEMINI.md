@@ -2,13 +2,14 @@
 
 This file maintains the state and roadmap for the Weather Monitoring project. It is intended to be read by Gemini CLI at the start of each session.
 
-## 📝 Current State (Last Updated: Mar 1, 2026)
+## 📝 Current State (Last Updated: Mar 8, 2026)
+- **Version:** v0.1.1 (Stable).
 - **Refactored Python App:** Main script renamed to `app/mkweathergraphs_loop.py`. Code is modularized, uses `plt.close()` to prevent memory leaks, and handles configuration via a central dictionary.
 - **Testing:** Comprehensive test suite added in `app/test_weather.py` using `pytest`.
 - **CI/CD:** GitHub Actions now includes a `test` stage before building and pushing Docker images.
 - **Infrastructure:** Helm charts updated, deployment verified in Kubernetes (namespace: `default`).
-- **Monitoring Audit:** Identified an incorrect metric name in Prometheus alerts (`probe_http_last_modified_timestamp_seconds`). Verified that Neocities *does* provide the `Last-Modified` header, but the prober needs the correct metric name (`probe_last_modified_timestamp_seconds`).
-- **Uncommitted Changes:** Unstaged improvements exist in `infra/prometheus/` and an untracked `blackbox-values.yaml`.
+- **Monitoring Audit:** Fixed metric name `probe_last_modified_timestamp_seconds`. Deployed Blackbox Exporter with `http_2xx_with_age` module.
+- **Uncommitted Changes:** None (all infra changes staged and committed).
 
 ## 🛠 Tech Stack
 - **Backend:** Python 3.9 (Matplotlib, Seaborn, InfluxDB Client).
@@ -17,7 +18,7 @@ This file maintains the state and roadmap for the Weather Monitoring project. It
 - **Hosting:** Neocities (for static graphs and index.html).
 
 ## 🚀 Roadmap & Next Steps
-1.  **[ ] Fix Monitoring Config:** 
+1.  **[x] Fix Monitoring Config:** 
     - Rename `probe_http_last_modified_timestamp_seconds` to `probe_last_modified_timestamp_seconds` in `infra/prometheus/weather-alerts-configmap.yaml`.
     - Stage and commit `infra/prometheus/blackbox-values.yaml`.
     - Finalize `infra/prometheus/values.yaml`.
