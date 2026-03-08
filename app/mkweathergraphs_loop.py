@@ -2,6 +2,7 @@ import os
 import requests
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
 from influxdb_client import InfluxDBClient
 import seaborn as sns
 from scipy.ndimage import gaussian_filter1d
@@ -77,6 +78,10 @@ def generate_beautiful_graph(query_api, config, location, tz_offset, range_spec,
     ax.set_title(f"{location}: {title}", fontsize=4)
     plt.xticks(rotation=30, fontsize=4)
     plt.yticks(fontsize=4)
+
+    # Disable scientific notation on Y axis
+    ax.yaxis.set_major_formatter(ticker.ScalarFormatter(useOffset=False))
+    ax.yaxis.get_major_formatter().set_scientific(False)
 
     ax.grid(which='major', color='darkgray', linestyle='-', linewidth=0.2)
     ax.minorticks_on()
