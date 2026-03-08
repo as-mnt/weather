@@ -1,0 +1,13 @@
+# infra/prometheus/blackbox-values.yaml
+config:
+  modules:
+    http_2xx_with_age:
+      prober: http
+      timeout: 10s
+      http:
+        valid_status_codes: [200]
+        method: GET
+        preferred_ip_protocol: "ip4"  # ← КЛЮЧЕВОЕ ИЗМЕНЕНИЕ              
+
+service:
+  type: ClusterIP

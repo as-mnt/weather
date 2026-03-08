@@ -27,7 +27,7 @@ serverFiles:
         scrape_interval: 30m
         metrics_path: /probe
         params:
-          module: [http_2xx]
+          module: [http_2xx_with_age]
         static_configs:
           - targets:
               - https://exograph.neocities.org/graphs/weather-temperature_2m--2d.png

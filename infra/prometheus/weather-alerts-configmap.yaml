@@ -36,3 +36,11 @@ data:
           severity: critical
         annotations:
           summary: "Нет данных на хостинге более 62 минут"
+      - alert: WeatherPipelineStalled1
+        expr: |
+          time() - probe_last_modified_timestamp_seconds{job="weather-website"} > 62 * 60
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Файл на хостинге не обновлялся более 62 минут"
