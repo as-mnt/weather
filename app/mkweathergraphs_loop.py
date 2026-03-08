@@ -46,10 +46,16 @@ def upload_to_neocities(local_filename, remote_filename, api_url, api_token, web
         return None
 
 def generate_beautiful_graph(query_api, config, location, tz_offset, range_spec, measurement, field, ylabel, title, filename):
+    # Handle legacy data for Bishkek (where location tag might be missing)
+    if location == "Bishkek":
+        location_filter = f'r.location == "{location}" or not exists r.location'
+    else:
+        location_filter = f'r.location == "{location}"'
+
     query = f'from(bucket: "{config["INFLUX_BUCKET"]}") |> range({range_spec}) \
                                               |> filter(fn: (r) => r._measurement == "{measurement}") \
                                               |> filter(fn: (r) => r._field == "{field}") \
-                                              |> filter(fn: (r) => r.location == "{location}") \
+                                              |> filter(fn: (r) => {location_filter}) \
                                               |> aggregateWindow(every: 5m, fn: mean, createEmpty: false) \
                                               |> yield(name: "mean")'
     
