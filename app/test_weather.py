@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch, mock_open
-from datetime import datetime
+from datetime import datetime, timedelta
 import mkweathergraphs_loop as weather
 
 @pytest.fixture
@@ -48,26 +48,14 @@ def test_upload_to_neocities_failure(mock_post, mock_config):
     
     assert url is None
 
-def test_generate_retro_beautiful_graph_calls_base(mock_config):
-    mock_query_api = MagicMock()
-    
-    # We patch the base function to see if it's called with correct filename
-    with patch('mkweathergraphs_loop.generate_beautiful_graph') as mock_gen:
-        weather.generate_retro_beautiful_graph(mock_query_api, mock_config, "-2d", "m", "f", "y", "t")
-        
-        mock_gen.assert_called_once()
-        args, kwargs = mock_gen.call_args
-        assert args[2] == "start: -2d"  # range_spec
-        # The filename is the 8th positional argument (index 7) or passed via kwargs
-        assert args[7] == "graphs/m-f--2d.png"
-
 @patch('mkweathergraphs_loop.plt')
 @patch('mkweathergraphs_loop.upload_to_neocities')
 def test_generate_beautiful_graph_no_data(mock_upload, mock_plt, mock_config):
     mock_query_api = MagicMock()
     mock_query_api.query.return_value = [] # No tables returned
     
-    res = weather.generate_beautiful_graph(mock_query_api, mock_config, "start: -1h", "m", "f", "y", "t")
+    # New signature: (query_api, config, location, tz_offset, range_spec, measurement, field, ylabel, title, filename)
+    res = weather.generate_beautiful_graph(mock_query_api, mock_config, "Bishkek", 6, "start: -1h", "m", "f", "y", "t", "out.png")
     
     assert res is None
     mock_plt.subplots.assert_not_called()
@@ -97,20 +85,22 @@ def test_generate_beautiful_graph_with_data(mock_upload, mock_plt, mock_config):
     
     mock_upload.return_value = "https://example.com/ok.png"
     
-    res = weather.generate_beautiful_graph(mock_query_api, mock_config, "start: -1h", "weather", "temp", "C", "Title")
+    # New signature: (query_api, config, location, tz_offset, range_spec, measurement, field, ylabel, title, filename)
+    res = weather.generate_beautiful_graph(mock_query_api, mock_config, "Kazan", 3, "start: -1h", "weather", "temp", "C", "Title", "kazan.png")
     
     # Verify visualization steps
     mock_plt.subplots.assert_called_once()
     mock_ax.plot.assert_called_once()
-    mock_ax.set_title.assert_called_with("Title", fontsize=4)
+    mock_ax.set_title.assert_called_with("Kazan: Title", fontsize=4)
     mock_ax.set_ylabel.assert_called_with("C", fontsize=4)
     
     # Verify save and close
-    mock_plt.savefig.assert_called_once()
+    mock_plt.savefig.assert_called_once_with("kazan.png", dpi=200, bbox_inches="tight")
     mock_plt.close.assert_called_with(mock_fig)
     
     assert res["status"] == "success"
     assert res["image_url"] == "https://example.com/ok.png"
+    assert res["location"] == "Kazan"
 
 @patch('mkweathergraphs_loop.plt')
 @patch('mkweathergraphs_loop.upload_to_neocities')
@@ -126,7 +116,7 @@ def test_generate_beautiful_graph_upload_fails(mock_upload, mock_plt, mock_confi
     mock_plt.subplots.return_value = (MagicMock(), MagicMock())
     mock_upload.return_value = None # Upload failed
     
-    res = weather.generate_beautiful_graph(mock_query_api, mock_config, "start: -1h", "m", "f", "y", "t")
+    res = weather.generate_beautiful_graph(mock_query_api, mock_config, "Vladivostok", 10, "start: -1h", "m", "f", "y", "t", "out.png")
     
     assert res["status"] == "error"
     assert "Failed to upload" in res["message"]
