@@ -3,67 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Погодные графики</title>
+    <title>Графики - Бишкек</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; }
-        h1 { color: #1a73e8; }
-        h2 { border-bottom: 2px solid #1a73e8; display: inline-block; padding-bottom: 5px; margin-top: 40px; }
-        .city-section { margin-bottom: 50px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .graph-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; transition: transform 0.2s; margin: 10px; }
-        img:hover { transform: scale(1.05); }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f0f2f5; }
+        img { max-width: 80%; height: auto; margin: 20px; border: 1px solid #ddd; border-radius: 4px; }
     </style>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 </head>
 <body>
-    <h1>Мониторинг погоды и экологии</h1>
-
-    <div class="city-section">
-        <h2>Бишкек (Bishkek)</h2>
-        <div class="graph-container">
-            <img src="graphs/bishkek-weather-temperature_2m--2d.png?cache=none">
-            <img src="graphs/bishkek-weather-temperature_2m--2w.png?cache=none">
-            <img src="graphs/bishkek-weather-surface_pressure--2d.png?cache=none">
-            <img src="graphs/bishkek-weather-surface_pressure--2w.png?cache=none">
-            <img src="graphs/bishkek-weather-relative_humidity_2m--2d.png?cache=none">
-            <img src="graphs/bishkek-weather-relative_humidity_2m--2w.png?cache=none">
-            <img src="graphs/bishkek-pollution-components_pm2_5--2d.png?cache=none">
-            <img src="graphs/bishkek-pollution-components_pm2_5--2w.png?cache=none">
-        </div>
+    <h1>Графики (Бишкек)</h1>
+    <img src="graphs/weather-temperature_2m--2d.png?cache=none">
+    <img src="graphs/weather-temperature_2m--2w.png?cache=none">
+    <img src="graphs/weather-surface_pressure--2d.png?cache=none">
+    <img src="graphs/weather-surface_pressure--2w.png?cache=none">
+    <img src="graphs/weather-relative_humidity_2m--2d.png?cache=none">
+    <img src="graphs/weather-relative_humidity_2m--2w.png?cache=none">
+    <img src="graphs/pollution-components_pm2_5--2d.png?cache=none">
+    <img src="graphs/pollution-components_pm2_5--2w.png?cache=none">
+    
+    <div style="margin-top: 50px; font-size: 0.9em;">
+        Другие города: 
+        <a href="/Bishkek/">Бишкек</a> | 
+        <a href="/Kazan/">Казань</a> | 
+        <a href="/Vladivostok/">Владивосток</a>
     </div>
-
-    <div class="city-section">
-        <h2>Казань (Kazan)</h2>
-        <div class="graph-container">
-            <img src="graphs/kazan-weather-temperature_2m--2d.png?cache=none">
-            <img src="graphs/kazan-weather-temperature_2m--2w.png?cache=none">
-            <img src="graphs/kazan-weather-surface_pressure--2d.png?cache=none">
-            <img src="graphs/kazan-weather-surface_pressure--2w.png?cache=none">
-            <img src="graphs/kazan-weather-relative_humidity_2m--2d.png?cache=none">
-            <img src="graphs/kazan-weather-relative_humidity_2m--2w.png?cache=none">
-            <img src="graphs/kazan-pollution-components_pm2_5--2d.png?cache=none">
-            <img src="graphs/kazan-pollution-components_pm2_5--2w.png?cache=none">
-        </div>
-    </div>
-
-    <div class="city-section">
-        <h2>Владивосток (Vladivostok)</h2>
-        <div class="graph-container">
-            <img src="graphs/vladivostok-weather-temperature_2m--2d.png?cache=none">
-            <img src="graphs/vladivostok-weather-temperature_2m--2w.png?cache=none">
-            <img src="graphs/vladivostok-weather-surface_pressure--2d.png?cache=none">
-            <img src="graphs/vladivostok-weather-surface_pressure--2w.png?cache=none">
-            <img src="graphs/vladivostok-weather-relative_humidity_2m--2d.png?cache=none">
-            <img src="graphs/vladivostok-weather-relative_humidity_2m--2w.png?cache=none">
-            <img src="graphs/vladivostok-pollution-components_pm2_5--2d.png?cache=none">
-            <img src="graphs/vladivostok-pollution-components_pm2_5--2w.png?cache=none">
-        </div>
-    </div>
-
-    <p style="font-size: 0.8em; color: #666; margin-top: 30px;">
-        Данные обновляются автоматически. Город по умолчанию (Bishkek) также доступен по старым ссылкам.
-    </p>
 </body>
 </html>

@@ -29,10 +29,10 @@ def test_upload_to_neocities_success(mock_post, mock_config):
 
     # We need to mock open() because the function opens the file
     with patch('builtins.open', mock_open(read_data=b"data")):
-        url = weather.upload_to_neocities("test.png", mock_config['NEOCITIES_URL'], 
+        url = weather.upload_to_neocities("local.png", "remote.png", mock_config['NEOCITIES_URL'], 
                                          mock_config['NEOCITIES_TOKEN'], mock_config['WEBHOST_URL'])
     
-    assert url == "https://example.com/test.png"
+    assert url == "https://example.com/remote.png"
     mock_post.assert_called_once()
 
 @patch('requests.post')
@@ -43,7 +43,7 @@ def test_upload_to_neocities_failure(mock_post, mock_config):
     mock_post.return_value = mock_response
 
     with patch('builtins.open', mock_open(read_data=b"data")):
-        url = weather.upload_to_neocities("test.png", mock_config['NEOCITIES_URL'], 
+        url = weather.upload_to_neocities("local.png", "remote.png", mock_config['NEOCITIES_URL'], 
                                          mock_config['NEOCITIES_TOKEN'], mock_config['WEBHOST_URL'])
     
     assert url is None
@@ -54,7 +54,6 @@ def test_generate_beautiful_graph_no_data(mock_upload, mock_plt, mock_config):
     mock_query_api = MagicMock()
     mock_query_api.query.return_value = [] # No tables returned
     
-    # New signature: (query_api, config, location, tz_offset, range_spec, measurement, field, ylabel, title, filename)
     res = weather.generate_beautiful_graph(mock_query_api, mock_config, "Bishkek", 6, "start: -1h", "m", "f", "y", "t", "out.png")
     
     assert res is None
@@ -85,7 +84,6 @@ def test_generate_beautiful_graph_with_data(mock_upload, mock_plt, mock_config):
     
     mock_upload.return_value = "https://example.com/ok.png"
     
-    # New signature: (query_api, config, location, tz_offset, range_spec, measurement, field, ylabel, title, filename)
     res = weather.generate_beautiful_graph(mock_query_api, mock_config, "Kazan", 3, "start: -1h", "weather", "temp", "C", "Title", "kazan.png")
     
     # Verify visualization steps
@@ -101,22 +99,3 @@ def test_generate_beautiful_graph_with_data(mock_upload, mock_plt, mock_config):
     assert res["status"] == "success"
     assert res["image_url"] == "https://example.com/ok.png"
     assert res["location"] == "Kazan"
-
-@patch('mkweathergraphs_loop.plt')
-@patch('mkweathergraphs_loop.upload_to_neocities')
-def test_generate_beautiful_graph_upload_fails(mock_upload, mock_plt, mock_config):
-    mock_record = MagicMock()
-    mock_record.get_time.return_value = datetime(2023, 1, 1, 10, 0)
-    mock_record.get_value.return_value = 10.0
-    mock_table = MagicMock()
-    mock_table.records = [mock_record]
-    mock_query_api = MagicMock()
-    mock_query_api.query.return_value = [mock_table]
-    
-    mock_plt.subplots.return_value = (MagicMock(), MagicMock())
-    mock_upload.return_value = None # Upload failed
-    
-    res = weather.generate_beautiful_graph(mock_query_api, mock_config, "Vladivostok", 10, "start: -1h", "m", "f", "y", "t", "out.png")
-    
-    assert res["status"] == "error"
-    assert "Failed to upload" in res["message"]

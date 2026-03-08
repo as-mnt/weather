@@ -26,22 +26,22 @@ def get_config():
         'INDEX_HTML': 'index.html'
     }
 
-def upload_to_neocities(filename, api_url, api_token, webhost_url):
+def upload_to_neocities(local_filename, remote_filename, api_url, api_token, webhost_url):
     try:
-        with open(filename, "rb") as f:
-            files = {filename: f}
+        with open(local_filename, "rb") as f:
+            files = {remote_filename: f}
             headers = {"Authorization": f"Bearer {api_token}"}
             response = requests.post(api_url, files=files, headers=headers)
         
-        fileurl = f"{webhost_url}/{filename}"
+        fileurl = f"{webhost_url}/{remote_filename}"
         if response.status_code == 200:
             print(f"File uploaded: {fileurl}")
             return fileurl
         else:
-            print(f"Error: {response.text}")
+            print(f"Error uploading {remote_filename}: {response.text}")
             return None
     except Exception as e:
-        print(f"Upload failed: {e}")
+        print(f"Upload failed for {remote_filename}: {e}")
         return None
 
 def generate_beautiful_graph(query_api, config, location, tz_offset, range_spec, measurement, field, ylabel, title, filename):
@@ -56,7 +56,6 @@ def generate_beautiful_graph(query_api, config, location, tz_offset, range_spec,
     times, values = [], []
     for table in tables:
         for record in table.records:
-            # Shift time to local
             times.append(record.get_time() + timedelta(hours=tz_offset))
             values.append(record.get_value())
 
@@ -86,10 +85,9 @@ def generate_beautiful_graph(query_api, config, location, tz_offset, range_spec,
     if config['DEBUG']: print(f"{current_timestamp()} Saving to {filename}")
     plt.savefig(filename, dpi=200, bbox_inches="tight")
     plt.close(fig)
-    if config['DEBUG']: print(f"{current_timestamp()} Saved and closed.")
-
-    if config['DEBUG']: print(f"{current_timestamp()} Uploading {filename}")
-    url = upload_to_neocities(filename, config['NEOCITIES_URL'], config['NEOCITIES_TOKEN'], config['WEBHOST_URL'])
+    
+    # Upload to Neocities (relative to root)
+    url = upload_to_neocities(filename, filename, config['NEOCITIES_URL'], config['NEOCITIES_TOKEN'], config['WEBHOST_URL'])
     
     if url:
         return {"status": "success", "image_url": url, "location": location}
@@ -98,6 +96,37 @@ def generate_beautiful_graph(query_api, config, location, tz_offset, range_spec,
 
 def current_timestamp():
     return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+def generate_city_html(location_name):
+    html = f"""<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Графики - {location_name}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; text-align: center; background-color: #f0f2f5; }}
+        img {{ max-width: 80%; height: auto; margin: 20px; border: 1px solid #ddd; border-radius: 4px; }}
+        .nav {{ margin-bottom: 20px; }}
+    </style>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+</head>
+<body>
+    <div class="nav"><a href="/">На главную</a></div>
+    <h1>Графики ({location_name})</h1>
+    <img src="/graphs/{location_name.lower()}-weather-temperature_2m--2d.png?cache=none">
+    <img src="/graphs/{location_name.lower()}-weather-temperature_2m--2w.png?cache=none">
+    <img src="/graphs/{location_name.lower()}-weather-surface_pressure--2d.png?cache=none">
+    <img src="/graphs/{location_name.lower()}-weather-surface_pressure--2w.png?cache=none">
+    <img src="/graphs/{location_name.lower()}-weather-relative_humidity_2m--2d.png?cache=none">
+    <img src="/graphs/{location_name.lower()}-weather-relative_humidity_2m--2w.png?cache=none">
+    <img src="/graphs/{location_name.lower()}-pollution-components_pm2_5--2d.png?cache=none">
+    <img src="/graphs/{location_name.lower()}-pollution-components_pm2_5--2w.png?cache=none">
+</body>
+</html>"""
+    return html
 
 def run_once(query_api, config):
     ct = current_timestamp()
@@ -122,23 +151,29 @@ def run_once(query_api, config):
 
     for loc in locations:
         for stepback, measurement, field, ylabel, title in metrics:
-            # Новое имя файла с префиксом города
             filename_city = f"{config['GRAPHS_PATH']}/{loc['name'].lower()}-{measurement}-{field}-{stepback}.png"
-            res = generate_beautiful_graph(query_api, config, loc["name"], loc["offset"], f"start: {stepback}", measurement, field, ylabel, title, filename_city)
-            print(res)
+            generate_beautiful_graph(query_api, config, loc["name"], loc["offset"], f"start: {stepback}", measurement, field, ylabel, title, filename_city)
             
-            # Старое имя файла для города по умолчанию (Бишкек)
             if loc.get("is_default"):
                 filename_legacy = f"{config['GRAPHS_PATH']}/{measurement}-{field}-{stepback}.png"
-                res_legacy = generate_beautiful_graph(query_api, config, loc["name"], loc["offset"], f"start: {stepback}", measurement, field, ylabel, title, filename_legacy)
-                print(f"Legacy upload: {res_legacy}")
-    
-    print(upload_to_neocities(config['INDEX_HTML'], config['NEOCITIES_URL'], config['NEOCITIES_TOKEN'], config['WEBHOST_URL']))
+                generate_beautiful_graph(query_api, config, loc["name"], loc["offset"], f"start: {stepback}", measurement, field, ylabel, title, filename_legacy)
+        
+        # Generate and upload city-specific index.html
+        city_html_content = generate_city_html(loc["name"])
+        local_city_html = f"{loc['name']}.html"
+        remote_city_html = f"{loc['name']}/index.html"
+        with open(local_city_html, "w") as f:
+            f.write(city_html_content)
+        upload_to_neocities(local_city_html, remote_city_html, config['NEOCITIES_URL'], config['NEOCITIES_TOKEN'], config['WEBHOST_URL'])
+
+    # Upload main index.html
+    upload_to_neocities(config['INDEX_HTML'], config['INDEX_HTML'], config['NEOCITIES_URL'], config['NEOCITIES_TOKEN'], config['WEBHOST_URL'])
 
 if __name__ == "__main__":
     config = get_config()
-    print(f"LOOP: {config['DO_LOOP']}\n")
-    
+    if not os.path.exists(config['GRAPHS_PATH']):
+        os.makedirs(config['GRAPHS_PATH'])
+        
     client = InfluxDBClient(url=config['INFLUX_URL'], token=config['INFLUX_TOKEN'], org=config['INFLUX_ORG'])
     query_api = client.query_api()
 
