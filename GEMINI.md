@@ -3,11 +3,12 @@
 This file maintains the state and roadmap for the Weather Monitoring project. It is intended to be read by Gemini CLI at the start of each session.
 
 ## 📝 Current State (Last Updated: Mar 8, 2026)
-- **Version:** v0.2.0 (Proposed).
+- **Version:** v0.2.0 (Stable).
 - **Multi-City Monitoring:** Added Kazan and Vladivostok alongside Bishkek.
+- **Dynamic Content:** Automatic generation of city-specific `index.html` and subdirectory structure.
 - **Telegraf Config:** Updated to collect data for 3 locations with corresponding tags.
 - **Python App:** Modified to handle multiple locations with specific timezone offsets and output file naming. Legacy support for Bishkek filenames maintained.
-- **Web UI:** Updated `index.html` to display sections for all monitored cities.
+- **Web UI:** Updated `index.html` with links to city-specific dashboards.
 - **Monitoring Audit:** Fixed metric name `probe_last_modified_timestamp_seconds`. Deployed Blackbox Exporter with `http_2xx_with_age` module.
 - **Uncommitted Changes:** None (all infra changes staged and committed).
 
