@@ -44,10 +44,11 @@ def upload_to_neocities(filename, api_url, api_token, webhost_url):
         print(f"Upload failed: {e}")
         return None
 
-def generate_beautiful_graph(query_api, config, range_spec, measurement, field, ylabel, title, filename=None):
+def generate_beautiful_graph(query_api, config, location, tz_offset, range_spec, measurement, field, ylabel, title, filename):
     query = f'from(bucket: "{config["INFLUX_BUCKET"]}") |> range({range_spec}) \
                                               |> filter(fn: (r) => r._measurement == "{measurement}") \
                                               |> filter(fn: (r) => r._field == "{field}") \
+                                              |> filter(fn: (r) => r.location == "{location}") \
                                               |> aggregateWindow(every: 5m, fn: mean, createEmpty: false) \
                                               |> yield(name: "mean")'
     
@@ -55,12 +56,12 @@ def generate_beautiful_graph(query_api, config, range_spec, measurement, field, 
     times, values = [], []
     for table in tables:
         for record in table.records:
-            # Shift time to local (assuming +6h as in original code)
-            times.append(record.get_time() + timedelta(hours=6))
+            # Shift time to local
+            times.append(record.get_time() + timedelta(hours=tz_offset))
             values.append(record.get_value())
 
     if not times:
-        print(f"No data for {measurement}:{field}")
+        print(f"No data for {location} {measurement}:{field}")
         return None
 
     sns.set_style('darkgrid')
@@ -74,7 +75,7 @@ def generate_beautiful_graph(query_api, config, range_spec, measurement, field, 
 
     ax.set_xlabel("время", fontsize=4)
     ax.set_ylabel(ylabel, fontsize=4)
-    ax.set_title(title, fontsize=4)
+    ax.set_title(f"{location}: {title}", fontsize=4)
     plt.xticks(rotation=30, fontsize=4)
     plt.yticks(fontsize=4)
 
@@ -82,9 +83,6 @@ def generate_beautiful_graph(query_api, config, range_spec, measurement, field, 
     ax.minorticks_on()
     ax.grid(which='minor', color='lightgray', linestyle=':', linewidth=0.2)
 
-    if not filename:
-        filename = f"{config['GRAPHS_PATH']}/{measurement}-{field}.png"
-    
     if config['DEBUG']: print(f"{current_timestamp()} Saving to {filename}")
     plt.savefig(filename, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -94,13 +92,9 @@ def generate_beautiful_graph(query_api, config, range_spec, measurement, field, 
     url = upload_to_neocities(filename, config['NEOCITIES_URL'], config['NEOCITIES_TOKEN'], config['WEBHOST_URL'])
     
     if url:
-        return {"status": "success", "image_url": url}
+        return {"status": "success", "image_url": url, "location": location}
     else:
-        return {"status": "error", "message": "Failed to upload"}
-
-def generate_retro_beautiful_graph(query_api, config, stepback, measurement, field, ylabel, title):
-    filename = f"{config['GRAPHS_PATH']}/{measurement}-{field}-{stepback}.png"
-    return generate_beautiful_graph(query_api, config, f"start: {stepback}", measurement, field, ylabel, title, filename)
+        return {"status": "error", "message": "Failed to upload", "location": location}
 
 def current_timestamp():
     return datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -109,6 +103,12 @@ def run_once(query_api, config):
     ct = current_timestamp()
     print(f"{ct} fetching and looping\n")
     
+    locations = [
+        {"name": "Bishkek", "offset": 6, "is_default": True},
+        {"name": "Kazan", "offset": 3, "is_default": False},
+        {"name": "Vladivostok", "offset": 10, "is_default": False},
+    ]
+
     metrics = [
         ("-2d", "weather", "temperature_2m", "t, C", "Температура воздуха на 2м"),
         ("-2d", "weather", "surface_pressure", "p, hPa", "Атмосферное давление у земли"),
@@ -120,9 +120,18 @@ def run_once(query_api, config):
         ("-2w", "pollution", "components_pm2_5", "pm25", "Загрязнение частицами pm2,5"),
     ]
 
-    for stepback, measurement, field, ylabel, title in metrics:
-        res = generate_retro_beautiful_graph(query_api, config, stepback, measurement, field, ylabel, title)
-        print(res)
+    for loc in locations:
+        for stepback, measurement, field, ylabel, title in metrics:
+            # Новое имя файла с префиксом города
+            filename_city = f"{config['GRAPHS_PATH']}/{loc['name'].lower()}-{measurement}-{field}-{stepback}.png"
+            res = generate_beautiful_graph(query_api, config, loc["name"], loc["offset"], f"start: {stepback}", measurement, field, ylabel, title, filename_city)
+            print(res)
+            
+            # Старое имя файла для города по умолчанию (Бишкек)
+            if loc.get("is_default"):
+                filename_legacy = f"{config['GRAPHS_PATH']}/{measurement}-{field}-{stepback}.png"
+                res_legacy = generate_beautiful_graph(query_api, config, loc["name"], loc["offset"], f"start: {stepback}", measurement, field, ylabel, title, filename_legacy)
+                print(f"Legacy upload: {res_legacy}")
     
     print(upload_to_neocities(config['INDEX_HTML'], config['NEOCITIES_URL'], config['NEOCITIES_TOKEN'], config['WEBHOST_URL']))
 
@@ -143,4 +152,3 @@ if __name__ == "__main__":
         print("Exiting...")
     finally:
         client.close()
-

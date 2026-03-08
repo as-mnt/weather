@@ -3,11 +3,11 @@
 This file maintains the state and roadmap for the Weather Monitoring project. It is intended to be read by Gemini CLI at the start of each session.
 
 ## 📝 Current State (Last Updated: Mar 8, 2026)
-- **Version:** v0.1.1 (Stable).
-- **Refactored Python App:** Main script renamed to `app/mkweathergraphs_loop.py`. Code is modularized, uses `plt.close()` to prevent memory leaks, and handles configuration via a central dictionary.
-- **Testing:** Comprehensive test suite added in `app/test_weather.py` using `pytest`.
-- **CI/CD:** GitHub Actions now includes a `test` stage before building and pushing Docker images.
-- **Infrastructure:** Helm charts updated, deployment verified in Kubernetes (namespace: `default`).
+- **Version:** v0.2.0 (Proposed).
+- **Multi-City Monitoring:** Added Kazan and Vladivostok alongside Bishkek.
+- **Telegraf Config:** Updated to collect data for 3 locations with corresponding tags.
+- **Python App:** Modified to handle multiple locations with specific timezone offsets and output file naming. Legacy support for Bishkek filenames maintained.
+- **Web UI:** Updated `index.html` to display sections for all monitored cities.
 - **Monitoring Audit:** Fixed metric name `probe_last_modified_timestamp_seconds`. Deployed Blackbox Exporter with `http_2xx_with_age` module.
 - **Uncommitted Changes:** None (all infra changes staged and committed).
 
