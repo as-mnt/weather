@@ -18,14 +18,13 @@ config:
 configmap:
   name: weather-config
 
-# Ресурсы (опционально)
-#resources:
-#  limits:
-#    memory: "128Mi"
-#    cpu: "100m"
-#  requests:
-#    memory: "64Mi"
-#    cpu: "50m"
+resources:
+  requests:
+    memory: "200Mi"
+    cpu: "100m"
+  limits:
+    memory: "400Mi"
+    cpu: "500m"
 
 #podDns:
 #  enabled: true

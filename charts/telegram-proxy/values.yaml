@@ -9,3 +9,11 @@ secrets:
 
 service:
   port: 8080
+
+resources:
+  requests:
+    memory: "24Mi"
+    cpu: "10m"
+  limits:
+    memory: "64Mi"
+    cpu: "100m"
