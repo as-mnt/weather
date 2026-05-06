@@ -6,6 +6,8 @@ import matplotlib.ticker as ticker
 from influxdb_client import InfluxDBClient
 import seaborn as sns
 from scipy.ndimage import gaussian_filter1d
+import signal
+import threading
 import time
 from datetime import datetime, timedelta
 
@@ -208,21 +210,34 @@ def run_once(query_api, config):
     # Upload main index.html
     upload_to_neocities(config['INDEX_HTML'], config['INDEX_HTML'], config['NEOCITIES_URL'], config['NEOCITIES_TOKEN'], config['WEBHOST_URL'])
 
+def run_loop(query_api, config, shutdown_event):
+    """Run run_once() in a loop until shutdown_event is set or DO_LOOP is false."""
+    while not shutdown_event.is_set():
+        run_once(query_api, config)
+        if not config['DO_LOOP']:
+            break
+        shutdown_event.wait(timeout=config['WAIT_SECONDS'])
+
+
 if __name__ == "__main__":
     config = get_config()
     if not os.path.exists(config['GRAPHS_PATH']):
         os.makedirs(config['GRAPHS_PATH'])
-        
+
+    shutdown_event = threading.Event()
+
+    def _handle_signal(signum, frame):
+        print(f"Signal {signum} received, finishing current cycle and shutting down...")
+        shutdown_event.set()
+
+    signal.signal(signal.SIGTERM, _handle_signal)
+    signal.signal(signal.SIGINT, _handle_signal)
+
     client = InfluxDBClient(url=config['INFLUX_URL'], token=config['INFLUX_TOKEN'], org=config['INFLUX_ORG'])
     query_api = client.query_api()
 
     try:
-        while True:
-            run_once(query_api, config)
-            if not config['DO_LOOP']:
-                break
-            time.sleep(config['WAIT_SECONDS'])
-    except KeyboardInterrupt:
-        print("Exiting...")
+        run_loop(query_api, config, shutdown_event)
     finally:
         client.close()
+        print("Shutdown complete.")

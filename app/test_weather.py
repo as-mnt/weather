@@ -1,4 +1,5 @@
 import pytest
+import threading
 from unittest.mock import MagicMock, patch, mock_open, call
 from datetime import datetime, timedelta
 import mkweathergraphs_loop as weather
@@ -175,3 +176,40 @@ def test_generate_beautiful_graph_with_data(mock_upload, mock_plt, mock_config):
     assert res["status"] == "success"
     assert res["image_url"] == "https://example.com/ok.png"
     assert res["location"] == "Kazan"
+
+
+@pytest.fixture
+def loop_config(mock_config):
+    return {**mock_config, 'DO_LOOP': False, 'WAIT_SECONDS': 3600}
+
+
+def test_run_loop_single_cycle(loop_config):
+    """DO_LOOP=False: run_once is called exactly once."""
+    with patch('mkweathergraphs_loop.run_once') as mock_run_once:
+        weather.run_loop(MagicMock(), loop_config, threading.Event())
+    mock_run_once.assert_called_once()
+
+
+def test_run_loop_skips_if_shutdown_set(loop_config):
+    """If shutdown_event is set before the loop, run_once is never called."""
+    shutdown = threading.Event()
+    shutdown.set()
+    with patch('mkweathergraphs_loop.run_once') as mock_run_once:
+        weather.run_loop(MagicMock(), {**loop_config, 'DO_LOOP': True}, shutdown)
+    mock_run_once.assert_not_called()
+
+
+def test_run_loop_exits_after_cycle_on_shutdown(loop_config):
+    """Shutdown requested during run_once: loop exits after that cycle completes."""
+    shutdown = threading.Event()
+    call_count = 0
+
+    def _run_once_side_effect(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        shutdown.set()
+
+    with patch('mkweathergraphs_loop.run_once', side_effect=_run_once_side_effect):
+        weather.run_loop(MagicMock(), {**loop_config, 'DO_LOOP': True, 'WAIT_SECONDS': 0}, shutdown)
+
+    assert call_count == 1
