@@ -6,9 +6,34 @@ import matplotlib.ticker as ticker
 from influxdb_client import InfluxDBClient
 import seaborn as sns
 from scipy.ndimage import gaussian_filter1d
-import datetime
 import time
 from datetime import datetime, timedelta
+
+
+class _NoRetry(Exception):
+    """Raised inside a retried function to abort immediately without further attempts."""
+
+
+def _with_retry(fn, retries=3, backoff=2, label=""):
+    """Call fn(), retrying on Exception up to `retries` times with exponential backoff.
+
+    Raise _NoRetry inside fn() to signal a non-recoverable error and stop retrying.
+    Returns None if all attempts fail.
+    """
+    delay = backoff
+    for attempt in range(1, retries + 1):
+        try:
+            return fn()
+        except _NoRetry as e:
+            print(f"{label}: {e}")
+            return None
+        except Exception as e:
+            if attempt == retries:
+                print(f"{label} failed after {retries} attempts: {e}")
+                return None
+            print(f"{label} attempt {attempt}/{retries} failed: {e}. Retrying in {delay}s...")
+            time.sleep(delay)
+            delay *= 2
 
 
 def get_config():
@@ -28,22 +53,20 @@ def get_config():
     }
 
 def upload_to_neocities(local_filename, remote_filename, api_url, api_token, webhost_url):
-    try:
+    def _attempt():
         with open(local_filename, "rb") as f:
             files = {remote_filename: f}
             headers = {"Authorization": f"Bearer {api_token}"}
             response = requests.post(api_url, files=files, headers=headers)
-        
         fileurl = f"{webhost_url}/{remote_filename}"
         if response.status_code == 200:
             print(f"File uploaded: {fileurl}")
             return fileurl
-        else:
-            print(f"Error uploading {remote_filename}: {response.text}")
-            return None
-    except Exception as e:
-        print(f"Upload failed for {remote_filename}: {e}")
-        return None
+        if 400 <= response.status_code < 500:
+            raise _NoRetry(f"HTTP {response.status_code}: {response.text}")
+        raise requests.HTTPError(f"Server error {response.status_code}: {response.text}")
+
+    return _with_retry(_attempt, label=f"upload {remote_filename}")
 
 def generate_beautiful_graph(query_api, config, location, tz_offset, range_spec, measurement, field, ylabel, title, filename):
     # Handle legacy data for Bishkek (where location tag might be missing)
@@ -59,7 +82,12 @@ def generate_beautiful_graph(query_api, config, location, tz_offset, range_spec,
                                               |> aggregateWindow(every: 5m, fn: mean, createEmpty: false) \
                                               |> yield(name: "mean")'
     
-    tables = query_api.query(query)
+    tables = _with_retry(
+        lambda: query_api.query(query),
+        label=f"InfluxDB query {location}/{measurement}/{field}"
+    )
+    if tables is None:
+        return None
     times, values = [], []
     for table in tables:
         for record in table.records:

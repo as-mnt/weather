@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, patch, mock_open, call
 from datetime import datetime, timedelta
 import mkweathergraphs_loop as weather
 
@@ -58,6 +58,82 @@ def test_generate_beautiful_graph_no_data(mock_upload, mock_plt, mock_config):
     
     assert res is None
     mock_plt.subplots.assert_not_called()
+
+def test_with_retry_success():
+    fn = MagicMock(return_value="ok")
+    assert weather._with_retry(fn) == "ok"
+    fn.assert_called_once()
+
+
+def test_with_retry_succeeds_after_failure():
+    fn = MagicMock(side_effect=[Exception("fail"), "ok"])
+    with patch('time.sleep'):
+        result = weather._with_retry(fn, retries=3, backoff=1)
+    assert result == "ok"
+    assert fn.call_count == 2
+
+
+def test_with_retry_exhausted():
+    fn = MagicMock(side_effect=Exception("fail"))
+    with patch('time.sleep'):
+        result = weather._with_retry(fn, retries=3, backoff=1)
+    assert result is None
+    assert fn.call_count == 3
+
+
+def test_with_retry_no_retry_exception():
+    fn = MagicMock(side_effect=weather._NoRetry("fatal"))
+    result = weather._with_retry(fn)
+    assert result is None
+    fn.assert_called_once()
+
+
+@patch('requests.post')
+def test_upload_retries_on_server_error(mock_post, mock_config):
+    mock_500 = MagicMock()
+    mock_500.status_code = 500
+    mock_500.text = "Internal Server Error"
+    mock_200 = MagicMock()
+    mock_200.status_code = 200
+    mock_post.side_effect = [mock_500, mock_200]
+
+    with patch('builtins.open', mock_open(read_data=b"data")), patch('time.sleep'):
+        url = weather.upload_to_neocities("local.png", "remote.png",
+                                          mock_config['NEOCITIES_URL'],
+                                          mock_config['NEOCITIES_TOKEN'],
+                                          mock_config['WEBHOST_URL'])
+
+    assert url == "https://example.com/remote.png"
+    assert mock_post.call_count == 2
+
+
+@patch('mkweathergraphs_loop.plt')
+@patch('mkweathergraphs_loop.upload_to_neocities')
+def test_generate_beautiful_graph_retries_on_influx_error(mock_upload, mock_plt, mock_config):
+    mock_record = MagicMock()
+    mock_record.get_time.return_value = datetime(2023, 1, 1, 10, 0)
+    mock_record.get_value.return_value = 20.5
+
+    mock_table = MagicMock()
+    mock_table.records = [mock_record]
+
+    mock_query_api = MagicMock()
+    mock_query_api.query.side_effect = [Exception("Connection refused"), [mock_table]]
+
+    mock_fig = MagicMock()
+    mock_ax = MagicMock()
+    mock_plt.subplots.return_value = (mock_fig, mock_ax)
+    mock_upload.return_value = "https://example.com/ok.png"
+
+    with patch('time.sleep'):
+        res = weather.generate_beautiful_graph(
+            mock_query_api, mock_config, "Kazan", 3, "start: -1h",
+            "weather", "temp", "C", "Title", "kazan.png"
+        )
+
+    assert mock_query_api.query.call_count == 2
+    assert res["status"] == "success"
+
 
 @patch('mkweathergraphs_loop.plt')
 @patch('mkweathergraphs_loop.upload_to_neocities')
