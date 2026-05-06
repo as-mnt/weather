@@ -21,7 +21,7 @@ data:
         labels:
           severity: warning
         annotations:
-          summary: "High PM2.5 level: {{ $value }} ug/m3 (normal <= 25)"
+          summary: "{{ $labels.location }}: High PM2.5 level: {{ $value }} ug/m3 (normal <= 25)"
       - alert: WeatherPodFrequentRestarts
         expr: changes(kube_pod_container_status_restarts_total{pod=~"weather-.*"}[1h]) > 2
         for: 10m

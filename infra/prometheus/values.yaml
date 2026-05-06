@@ -14,9 +14,6 @@ serverFiles:
     rule_files:
       - /etc/prometheus/rules.d/weather-alerts.yaml
     scrape_configs:
-      - job_name: 'prometheus'
-        static_configs:
-          - targets: ['localhost:9090']
       - job_name: 'telegraf'
         static_configs:
           - targets: ['telegraf:9273']
