@@ -178,6 +178,57 @@ def test_generate_beautiful_graph_with_data(mock_upload, mock_plt, mock_config):
     assert res["location"] == "Kazan"
 
 
+@patch('mkweathergraphs_loop.plt')
+@patch('mkweathergraphs_loop.upload_to_neocities')
+def test_generate_beautiful_graph_upload_failure(mock_upload, mock_plt, mock_config):
+    """When upload fails, function returns status=error."""
+    mock_record = MagicMock()
+    mock_record.get_time.return_value = datetime(2023, 1, 1, 10, 0)
+    mock_record.get_value.return_value = 20.5
+    mock_table = MagicMock()
+    mock_table.records = [mock_record]
+    mock_query_api = MagicMock()
+    mock_query_api.query.return_value = [mock_table]
+    mock_plt.subplots.return_value = (MagicMock(), MagicMock())
+    mock_upload.return_value = None
+
+    res = weather.generate_beautiful_graph(
+        mock_query_api, mock_config, "Kazan", 3, "start: -1h",
+        "weather", "temp", "C", "Title", "kazan.png"
+    )
+
+    assert res["status"] == "error"
+    assert res["location"] == "Kazan"
+
+
+def test_generate_beautiful_graph_bishkek_uses_legacy_filter(mock_config):
+    """Bishkek query includes 'not exists r.location' for legacy data."""
+    mock_query_api = MagicMock()
+    mock_query_api.query.return_value = []
+
+    weather.generate_beautiful_graph(
+        mock_query_api, mock_config, "Bishkek", 6, "start: -1h",
+        "weather", "temperature_2m", "t, C", "Title", "out.png"
+    )
+
+    query = mock_query_api.query.call_args.args[0]
+    assert "not exists r.location" in query
+
+
+def test_generate_beautiful_graph_non_bishkek_no_legacy_filter(mock_config):
+    """Non-Bishkek queries do not include legacy filter."""
+    mock_query_api = MagicMock()
+    mock_query_api.query.return_value = []
+
+    weather.generate_beautiful_graph(
+        mock_query_api, mock_config, "Kazan", 3, "start: -1h",
+        "weather", "temperature_2m", "t, C", "Title", "out.png"
+    )
+
+    query = mock_query_api.query.call_args.args[0]
+    assert "not exists r.location" not in query
+
+
 def test_generate_city_html_contains_location():
     html = weather.generate_city_html("Kazan")
     assert "<title>Графики - Kazan</title>" in html
@@ -215,7 +266,7 @@ def test_run_once_legacy_files_only_for_bishkek(mock_graph, mock_upload, mock_co
     """Legacy-файлы (без префикса города) генерируются только для Bishkek."""
     with patch('builtins.open', mock_open()):
         weather.run_once(MagicMock(), mock_config)
-    filenames = [c.args[9] for c in mock_graph.call_args_list]
+    filenames = [c.args[-1] for c in mock_graph.call_args_list]  # filename — последний позиционный аргумент
     legacy = [f for f in filenames if not any(
         f.startswith(f"graphs/{city}") for city in ["bishkek", "kazan", "vladivostok"]
     )]
