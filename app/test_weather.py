@@ -1,6 +1,8 @@
+import re
 import pytest
 import threading
-from unittest.mock import MagicMock, patch, mock_open, call
+import requests
+from unittest.mock import MagicMock, patch, mock_open, call, ANY
 from datetime import datetime, timedelta
 import mkweathergraphs_loop as weather
 
@@ -18,23 +20,22 @@ def mock_config():
 
 def test_current_timestamp():
     ts = weather.current_timestamp()
-    assert len(ts) == 15  # YYYYMMDD-HHMMSS
-    assert ts[8] == '-'
+    assert re.match(r'^\d{8}-\d{6}$', ts)
 
 @patch('requests.post')
 def test_upload_to_neocities_success(mock_post, mock_config):
-    # Setup mock response
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_post.return_value = mock_response
+    mock_post.return_value = MagicMock(status_code=200)
 
-    # We need to mock open() because the function opens the file
     with patch('builtins.open', mock_open(read_data=b"data")):
-        url = weather.upload_to_neocities("local.png", "remote.png", mock_config['NEOCITIES_URL'], 
+        url = weather.upload_to_neocities("local.png", "remote.png", mock_config['NEOCITIES_URL'],
                                          mock_config['NEOCITIES_TOKEN'], mock_config['WEBHOST_URL'])
-    
+
     assert url == "https://example.com/remote.png"
-    mock_post.assert_called_once()
+    mock_post.assert_called_once_with(
+        mock_config['NEOCITIES_URL'],
+        files=ANY,
+        headers={'Authorization': f"Bearer {mock_config['NEOCITIES_TOKEN']}"}
+    )
 
 @patch('requests.post')
 def test_upload_to_neocities_failure(mock_post, mock_config):
@@ -97,6 +98,20 @@ def test_upload_retries_on_server_error(mock_post, mock_config):
     mock_200 = MagicMock()
     mock_200.status_code = 200
     mock_post.side_effect = [mock_500, mock_200]
+
+    with patch('builtins.open', mock_open(read_data=b"data")), patch('time.sleep'):
+        url = weather.upload_to_neocities("local.png", "remote.png",
+                                          mock_config['NEOCITIES_URL'],
+                                          mock_config['NEOCITIES_TOKEN'],
+                                          mock_config['WEBHOST_URL'])
+
+    assert url == "https://example.com/remote.png"
+    assert mock_post.call_count == 2
+
+
+@patch('requests.post')
+def test_upload_retries_on_connection_error(mock_post, mock_config):
+    mock_post.side_effect = [requests.ConnectionError("timeout"), MagicMock(status_code=200)]
 
     with patch('builtins.open', mock_open(read_data=b"data")), patch('time.sleep'):
         url = weather.upload_to_neocities("local.png", "remote.png",
@@ -237,8 +252,12 @@ def test_generate_city_html_contains_location():
 
 def test_generate_city_html_img_paths_are_lowercased():
     html = weather.generate_city_html("Vladivostok")
-    for metric in ["weather-temperature_2m--2d", "weather-surface_pressure--2w",
-                   "weather-relative_humidity_2m--2d", "pollution-components_pm2_5--2w"]:
+    for metric in [
+        "weather-temperature_2m--2d", "weather-temperature_2m--2w",
+        "weather-surface_pressure--2d", "weather-surface_pressure--2w",
+        "weather-relative_humidity_2m--2d", "weather-relative_humidity_2m--2w",
+        "pollution-components_pm2_5--2d", "pollution-components_pm2_5--2w",
+    ]:
         assert f"vladivostok-{metric}.png" in html
 
 
