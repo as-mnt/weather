@@ -178,6 +178,50 @@ def test_generate_beautiful_graph_with_data(mock_upload, mock_plt, mock_config):
     assert res["location"] == "Kazan"
 
 
+def test_generate_city_html_contains_location():
+    html = weather.generate_city_html("Kazan")
+    assert "<title>Графики - Kazan</title>" in html
+    assert "<h1>Графики (Kazan)</h1>" in html
+
+
+def test_generate_city_html_img_paths_are_lowercased():
+    html = weather.generate_city_html("Vladivostok")
+    for metric in ["weather-temperature_2m--2d", "weather-surface_pressure--2w",
+                   "weather-relative_humidity_2m--2d", "pollution-components_pm2_5--2w"]:
+        assert f"vladivostok-{metric}.png" in html
+
+
+@patch('mkweathergraphs_loop.upload_to_neocities')
+@patch('mkweathergraphs_loop.generate_beautiful_graph')
+def test_run_once_graph_call_count(mock_graph, mock_upload, mock_config):
+    """3 города × 8 метрик = 24, плюс 8 legacy-файлов для Bishkek (is_default=True) = 32."""
+    with patch('builtins.open', mock_open()):
+        weather.run_once(MagicMock(), mock_config)
+    assert mock_graph.call_count == 32
+
+
+@patch('mkweathergraphs_loop.upload_to_neocities')
+@patch('mkweathergraphs_loop.generate_beautiful_graph')
+def test_run_once_upload_call_count(mock_graph, mock_upload, mock_config):
+    """3 city HTML + 1 index.html = 4 вызова upload_to_neocities."""
+    with patch('builtins.open', mock_open()):
+        weather.run_once(MagicMock(), mock_config)
+    assert mock_upload.call_count == 4
+
+
+@patch('mkweathergraphs_loop.upload_to_neocities')
+@patch('mkweathergraphs_loop.generate_beautiful_graph')
+def test_run_once_legacy_files_only_for_bishkek(mock_graph, mock_upload, mock_config):
+    """Legacy-файлы (без префикса города) генерируются только для Bishkek."""
+    with patch('builtins.open', mock_open()):
+        weather.run_once(MagicMock(), mock_config)
+    filenames = [c.args[9] for c in mock_graph.call_args_list]
+    legacy = [f for f in filenames if not any(
+        f.startswith(f"graphs/{city}") for city in ["bishkek", "kazan", "vladivostok"]
+    )]
+    assert len(legacy) == 8
+
+
 @pytest.fixture
 def loop_config(mock_config):
     return {**mock_config, 'DO_LOOP': False, 'WAIT_SECONDS': 3600}
