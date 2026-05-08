@@ -42,6 +42,11 @@ alertmanager:
     enabled: false
     size: 2Gi
     storageClass: ""  # без StorageClass — будет использовать ваш PV
+  extraSecretMounts:
+    - name: telegram-credentials
+      mountPath: /etc/alertmanager/secrets
+      secretName: telegram-credentials
+      readOnly: true
   config:
     global:
       resolve_timeout: 5m
@@ -56,6 +61,8 @@ alertmanager:
         webhook_configs:
           - url: 'http://telegram-proxy:8080/alert'
             send_resolved: true
+            http_config:
+              bearer_token_file: /etc/alertmanager/secrets/TG_PROXY_WEBHOOK_SECRET
 
 #prometheus-blackbox-exporter:
 #  enabled: true

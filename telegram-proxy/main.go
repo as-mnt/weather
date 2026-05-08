@@ -27,6 +27,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if secret := os.Getenv("TG_PROXY_WEBHOOK_SECRET"); secret != "" {
+		if r.Header.Get("Authorization") != "Bearer "+secret {
+			log.Printf("❌ Unauthorized request from %s", r.RemoteAddr)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+	}
+
 	var payload AlertManagerWebhook
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		log.Printf("❌ Invalid JSON: %v", err)
