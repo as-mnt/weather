@@ -109,10 +109,12 @@ deploy-local: check-env
 		--wait
 
 deploy: check-env
+	# --server-side=true --force-conflicts: предотвращает конфликты SSA после ручных kubectl операций (rollout undo, patch и т.п.)
 	helm upgrade --install weather $(CHART_PATH) \
 		--namespace "$(NAMESPACE)" \
 		--create-namespace \
 		--set image.tag="$(IMAGE_TAG)" \
+		--server-side=true --force-conflicts \
 		--wait
 
 # influxdata/telegraf chart не поддерживает dnsPolicy/dnsConfig через values,

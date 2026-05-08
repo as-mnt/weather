@@ -63,10 +63,10 @@ spec:
           readinessProbe:
             exec:
               command: ["sh", "-c", "test -f /app/index.html && test -n \"$(ls /app/graphs/*.png 2>/dev/null)\""]
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 5
-            failureThreshold: 2
+            failureThreshold: 3
       volumes:
         - name: graphs
           emptyDir: {}
