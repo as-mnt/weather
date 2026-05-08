@@ -115,17 +115,17 @@ deploy: check-env
 		--set image.tag="$(IMAGE_TAG)" \
 		--wait
 
-
-	helm upgrade --install telegraf \
+# influxdata/telegraf chart не поддерживает dnsPolicy/dnsConfig через values,
+# поэтому DNS-конфиг применяется отдельным kubectl patch после helm upgrade.
+deploy-telegraf: check-env
+	helm upgrade --install telegraf influxdata/telegraf \
 		--namespace "$(NAMESPACE)" \
-	  influxdata/telegraf -f infra/telegraf/values-meteo.yaml
-
+		-f infra/telegraf/values-meteo.yaml
 	@echo "$(GREEN)🔧 Применяем DNS-патч к telegraf для изоляции от fvds.ru$(RESET)"
 	kubectl patch deployment telegraf -n "$(NAMESPACE)" --type=json -p="$$(cat infra/telegraf/dns-patch.json)"
-
 	@echo "$(GREEN)🔄 Перезапускаем telegraf для применения изменений$(RESET)"
 	kubectl rollout restart deployment/telegraf -n "$(NAMESPACE)"
-
+	kubectl rollout status deployment/telegraf -n "$(NAMESPACE)"
 
 # Отладка
 logs:
@@ -163,7 +163,7 @@ deploy-proxy:
 proxy-logs:
 	kubectl logs deploy/telegram-proxy -n "$(NAMESPACE)" --tail=100 -f
 
-deploy-all: deploy deploy-proxy
+deploy-all: deploy deploy-telegraf deploy-proxy
 
 
 # Prometheus
