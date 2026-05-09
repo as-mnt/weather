@@ -111,7 +111,7 @@ test-cov:
 	@python3 -m py_compile $(APP_MAIN)
 	@echo "$(GREEN)✅ Синтаксис корректен$(RESET)"
 	@echo "$(GREEN)🧪 Запуск pytest с coverage для $(APP_MAIN)$(RESET)"
-	@export PYTHONPATH=$$(pwd)/app && pytest --cov=mkweathergraphs_loop --cov-report=term-missing app/test_weather.py
+	@export PYTHONPATH=$$(pwd)/app && pytest --cov=mkweathergraphs_loop --cov-report=term-missing --cov-fail-under=95 app/test_weather.py
 	@echo "$(GREEN)✅ Все тесты с coverage пройдены$(RESET)"
 
 test-venv:

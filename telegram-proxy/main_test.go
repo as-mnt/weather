@@ -90,7 +90,7 @@ func postRequest(body string) *http.Request {
 
 // fakeTelegram starts a test server that responds with the given status code to all requests.
 // It also counts how many times it was called.
-func fakeTelegram(t *testing.T, statusCode int) (serverURL string, callCount func() int32) {
+func fakeTelegram(t *testing.T, statusCode int) func() int32 {
 	t.Helper()
 	var n int32
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +103,7 @@ func fakeTelegram(t *testing.T, statusCode int) (serverURL string, callCount fun
 		telegramBaseURL = "https://api.telegram.org"
 	})
 	telegramBaseURL = ts.URL
-	return ts.URL, func() int32 { return atomic.LoadInt32(&n) }
+	return func() int32 { return atomic.LoadInt32(&n) }
 }
 
 // --- handler tests ---
@@ -208,6 +208,23 @@ func TestHandler_MissingChatID_Returns500(t *testing.T) {
 	}
 }
 
+func TestHandler_TelegramConnectionError_Returns500(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	telegramBaseURL = ts.URL
+	ts.Close() // port no longer listening → client.Post() returns err != nil
+	t.Cleanup(func() { telegramBaseURL = "https://api.telegram.org" })
+
+	t.Setenv("TG_PROXY_WEBHOOK_SECRET", "")
+	t.Setenv("BOT_TOKEN", "mytoken")
+	t.Setenv("CHAT_ID", "-123")
+	req := postRequest(makePayload("firing", singleAlert()))
+	rr := httptest.NewRecorder()
+	handler(rr, req)
+	if rr.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rr.Code)
+	}
+}
+
 func TestHandler_TelegramAPIError_Returns500(t *testing.T) {
 	fakeTelegram(t, http.StatusInternalServerError)
 	t.Setenv("TG_PROXY_WEBHOOK_SECRET", "")
@@ -222,7 +239,7 @@ func TestHandler_TelegramAPIError_Returns500(t *testing.T) {
 }
 
 func TestHandler_Success_Returns200(t *testing.T) {
-	_, calls := fakeTelegram(t, http.StatusOK)
+	calls := fakeTelegram(t, http.StatusOK)
 	t.Setenv("TG_PROXY_WEBHOOK_SECRET", "")
 	t.Setenv("BOT_TOKEN", "mytoken")
 	t.Setenv("CHAT_ID", "-123")
@@ -241,7 +258,7 @@ func TestHandler_Success_Returns200(t *testing.T) {
 }
 
 func TestHandler_MultipleAlerts_AllSent(t *testing.T) {
-	_, calls := fakeTelegram(t, http.StatusOK)
+	calls := fakeTelegram(t, http.StatusOK)
 	t.Setenv("TG_PROXY_WEBHOOK_SECRET", "")
 	t.Setenv("BOT_TOKEN", "mytoken")
 	t.Setenv("CHAT_ID", "-123")

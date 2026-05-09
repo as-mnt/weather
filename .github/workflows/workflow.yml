@@ -25,8 +25,12 @@ jobs:
         with:
           go-version-file: telegram-proxy/go.mod
 
+      - name: Run Go vet
+        run: go vet ./...
+        working-directory: telegram-proxy
+
       - name: Run Go tests
-        run: go test ./...
+        run: go test -race -cover ./...
         working-directory: telegram-proxy
 
       - name: Install dependencies
@@ -54,15 +58,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
-#      - name: Build and push
-#        uses: docker/build-push-action@v4
-#        with:
-#          context: .
-#          push: true
-#          tags: |
-#            asmnt/weather:dev-${{ steps.short-sha.outputs.sha_short }}
-
 
       - name: Build and push weather
         uses: docker/build-push-action@v6

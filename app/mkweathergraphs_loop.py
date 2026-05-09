@@ -226,7 +226,7 @@ def run_loop(query_api, config, shutdown_event):
         shutdown_event.wait(timeout=config['WAIT_SECONDS'])
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     config = get_config()
     if not os.path.exists(config['GRAPHS_PATH']):
         os.makedirs(config['GRAPHS_PATH'])

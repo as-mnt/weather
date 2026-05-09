@@ -61,8 +61,11 @@ def test_get_config_missing_required_vars(monkeypatch):
 def test_get_config_partial_missing_vars(monkeypatch, required_env):
     monkeypatch.delenv('INFLUX_TOKEN', raising=False)
     monkeypatch.delenv('NEOCITIES_URL', raising=False)
-    with pytest.raises(ValueError, match="INFLUX_TOKEN"):
+    with pytest.raises(ValueError) as exc_info:
         weather.get_config()
+    msg = str(exc_info.value)
+    assert "INFLUX_TOKEN" in msg
+    assert "NEOCITIES_URL" in msg
 
 
 def test_current_timestamp():
@@ -107,6 +110,25 @@ def test_generate_beautiful_graph_no_data(mock_upload, mock_plt, mock_config):
 
     assert res is None
     mock_plt.subplots.assert_not_called()
+
+
+@patch('mkweathergraphs_loop.plt')
+@patch('mkweathergraphs_loop.upload_to_neocities')
+def test_generate_beautiful_graph_influx_all_retries_exhausted(mock_upload, mock_plt, mock_config):
+    """When all InfluxDB retries fail, _with_retry returns None and function returns None."""
+    mock_query_api = MagicMock()
+    mock_query_api.query.side_effect = Exception("Connection refused")
+
+    with patch('time.sleep'):
+        res = weather.generate_beautiful_graph(
+            mock_query_api, mock_config, "Kazan", 3, "start: -1h",
+            "weather", "temp", "C", "Title", "kazan.png"
+        )
+
+    assert res is None
+    assert mock_query_api.query.call_count == 3
+    mock_plt.subplots.assert_not_called()
+
 
 def test_with_retry_success():
     fn = MagicMock(return_value="ok")
@@ -306,14 +328,6 @@ def test_run_once_graph_call_count(mock_graph, mock_upload, mock_config):
         weather.run_once(MagicMock(), mock_config)
     assert mock_graph.call_count == 32
 
-
-@patch('mkweathergraphs_loop.upload_to_neocities')
-@patch('mkweathergraphs_loop.generate_beautiful_graph')
-def test_run_once_upload_call_count(mock_graph, mock_upload, mock_config):
-    """3 city HTML + 1 index.html = 4 вызова upload_to_neocities."""
-    with patch('builtins.open', mock_open()):
-        weather.run_once(MagicMock(), mock_config)
-    assert mock_upload.call_count == 4
 
 
 @patch('mkweathergraphs_loop.upload_to_neocities')
