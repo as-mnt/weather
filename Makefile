@@ -60,9 +60,9 @@ secrets:
 		echo "Создайте его на основе scripts/env.example"; \
 		exit 1; \
 	fi
-	@echo "$(GREEN)📦 Создаём Secret 'weather-secrets' в namespace '$(NAMESPACE)'$(RESET)"
-	kubectl delete secret weather-secrets --namespace "$(NAMESPACE)" --ignore-not-found
-	kubectl create secret generic weather-secrets \
+	@echo "$(GREEN)📦 Создаём Secret 'weather-secret' в namespace '$(NAMESPACE)'$(RESET)"
+	kubectl delete secret weather-secret --namespace "$(NAMESPACE)" --ignore-not-found
+	kubectl create secret generic weather-secret \
 		--namespace "$(NAMESPACE)" \
 		--from-env-file="$(SECRETS_FILE)"
 	
@@ -139,7 +139,7 @@ describe:
 # Очистка
 undeploy:
 	helm uninstall weather --namespace "$(NAMESPACE)"
-	kubectl delete secret weather-secrets --namespace "$(NAMESPACE)" --ignore-not-found
+	kubectl delete secret weather-secret --namespace "$(NAMESPACE)" --ignore-not-found
 	kubectl delete configmap $(CONFIGMAP_NAME) --namespace "$(NAMESPACE)" --ignore-not-found
 	helm uninstall telegraf --namespace "$(NAMESPACE)"
 
