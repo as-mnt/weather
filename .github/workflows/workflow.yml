@@ -34,8 +34,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r app/requirements.txt
 
-      - name: Run tests
-        run: make test
+      - name: Run tests with coverage
+        run: make test-cov
 
   build-and-push:
     needs: test

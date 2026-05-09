@@ -30,7 +30,9 @@ help:
 	@echo "  make secrets          — создать Secret из .secrets/secrets.env"
 	@echo "  make sync-config      — обновить ConfigMap из $(CONFIG_SOURCE)"
 	@echo "  make test             — проверить синтаксис и импорты Python-скрипта"
+	@echo "  make test-cov         — запустить Python-тесты с coverage"
 	@echo "  make test-venv        — запустить проверки Python через ./venv"
+	@echo "  make test-cov-venv    — запустить Python-тесты с coverage через ./venv"
 	@echo "  make deploy           — задеплоить с IMAGE_TAG"
 	@echo "  make deploy-local     — задеплоить с тегом dev-<sha>"
 	@echo "  make logs             — показать логи"
@@ -100,6 +102,18 @@ test:
 	@export PYTHONPATH=$$(pwd)/app && pytest app/test_weather.py
 	@echo "$(GREEN)✅ Все тесты пройдены$(RESET)"
 
+test-cov:
+	@if [ ! -f "$(APP_MAIN)" ]; then \
+		echo "❌ Основной скрипт не найден: $(APP_MAIN)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)🧪 Проверка синтаксиса $(APP_MAIN)$(RESET)"
+	@python3 -m py_compile $(APP_MAIN)
+	@echo "$(GREEN)✅ Синтаксис корректен$(RESET)"
+	@echo "$(GREEN)🧪 Запуск pytest с coverage для $(APP_MAIN)$(RESET)"
+	@export PYTHONPATH=$$(pwd)/app && pytest --cov=mkweathergraphs_loop --cov-report=term-missing app/test_weather.py
+	@echo "$(GREEN)✅ Все тесты с coverage пройдены$(RESET)"
+
 test-venv:
 	@if [ ! -x "./venv/bin/python" ]; then \
 		echo "❌ Не найден ./venv/bin/python"; \
@@ -119,6 +133,26 @@ test-venv:
 	@echo "$(GREEN)🧪 Запуск pytest через ./venv$(RESET)"
 	@export PYTHONPATH=$$(pwd)/app && ./venv/bin/pytest app/test_weather.py
 	@echo "$(GREEN)✅ Все тесты в ./venv пройдены$(RESET)"
+
+test-cov-venv:
+	@if [ ! -x "./venv/bin/python" ]; then \
+		echo "❌ Не найден ./venv/bin/python"; \
+		exit 1; \
+	fi
+	@if [ ! -x "./venv/bin/pytest" ]; then \
+		echo "❌ Не найден ./venv/bin/pytest"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(APP_MAIN)" ]; then \
+		echo "❌ Основной скрипт не найден: $(APP_MAIN)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)🧪 Проверка синтаксиса $(APP_MAIN) через ./venv$(RESET)"
+	@./venv/bin/python -m py_compile $(APP_MAIN)
+	@echo "$(GREEN)✅ Синтаксис корректен$(RESET)"
+	@echo "$(GREEN)🧪 Запуск pytest с coverage через ./venv$(RESET)"
+	@export PYTHONPATH=$$(pwd)/app && ./venv/bin/pytest --cov=mkweathergraphs_loop --cov-report=term-missing app/test_weather.py
+	@echo "$(GREEN)✅ Все тесты с coverage в ./venv пройдены$(RESET)"
 
 # Деплой
 deploy-local: check-env
