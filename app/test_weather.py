@@ -318,6 +318,24 @@ def test_run_once_upload_call_count(mock_graph, mock_upload, mock_config):
 
 @patch('mkweathergraphs_loop.upload_to_neocities')
 @patch('mkweathergraphs_loop.generate_beautiful_graph')
+def test_run_once_upload_targets_and_paths(mock_graph, mock_upload, mock_config):
+    with patch('builtins.open', mock_open()):
+        weather.run_once(MagicMock(), mock_config)
+
+    assert mock_upload.call_args_list == [
+        call("Bishkek.html", "Bishkek/index.html", mock_config['NEOCITIES_URL'],
+             mock_config['NEOCITIES_TOKEN'], mock_config['WEBHOST_URL']),
+        call("Kazan.html", "Kazan/index.html", mock_config['NEOCITIES_URL'],
+             mock_config['NEOCITIES_TOKEN'], mock_config['WEBHOST_URL']),
+        call("Vladivostok.html", "Vladivostok/index.html", mock_config['NEOCITIES_URL'],
+             mock_config['NEOCITIES_TOKEN'], mock_config['WEBHOST_URL']),
+        call(mock_config['INDEX_HTML'], mock_config['INDEX_HTML'], mock_config['NEOCITIES_URL'],
+             mock_config['NEOCITIES_TOKEN'], mock_config['WEBHOST_URL']),
+    ]
+
+
+@patch('mkweathergraphs_loop.upload_to_neocities')
+@patch('mkweathergraphs_loop.generate_beautiful_graph')
 def test_run_once_legacy_files_only_for_bishkek(mock_graph, mock_upload, mock_config):
     """Legacy-файлы (без префикса города) генерируются только для Bishkek."""
     with patch('builtins.open', mock_open()):
