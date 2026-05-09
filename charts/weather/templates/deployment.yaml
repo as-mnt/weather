@@ -49,9 +49,6 @@ spec:
                 name: {{ .Values.configmap.name }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - name: graphs
-              mountPath: /app/public
           livenessProbe:
             exec:
               command: ["sh", "-c", "test -f /app/index.html && test -z \"$(find /app/graphs -name '*.png' -mmin +62)\""]
@@ -67,6 +64,3 @@ spec:
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
-      volumes:
-        - name: graphs
-          emptyDir: {}
