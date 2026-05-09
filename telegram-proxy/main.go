@@ -11,15 +11,35 @@ import (
 	"time"
 )
 
-// AlertManagerWebhook — структура входящего вебхука от Alertmanager
+type Alert struct {
+	Status      string            `json:"status"`
+	Labels      map[string]string `json:"labels"`
+	Annotations map[string]string `json:"annotations"`
+}
+
 type AlertManagerWebhook struct {
-	Receiver string `json:"receiver"`
-	Status   string `json:"status"`
-	Alerts   []struct {
-		Status      string            `json:"status"`
-		Labels      map[string]string `json:"labels"`
-		Annotations map[string]string `json:"annotations"`
-	} `json:"alerts"`
+	Receiver string  `json:"receiver"`
+	Status   string  `json:"status"`
+	Alerts   []Alert `json:"alerts"`
+}
+
+func formatMessage(alert Alert, payloadStatus string) string {
+	var text string
+	if summary := alert.Annotations["summary"]; summary != "" {
+		text = summary
+	} else if desc := alert.Annotations["description"]; desc != "" {
+		text = desc
+	} else {
+		name := alert.Labels["alertname"]
+		if name == "" {
+			name = "UnknownAlert"
+		}
+		text = fmt.Sprintf("Alert: %s", name)
+	}
+	if payloadStatus == "resolved" {
+		return "✅ RESOLVED\n" + text
+	}
+	return "🚨 FIRING\n" + text
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -49,30 +69,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Берём первую алерту (обычно их одна при тестировании)
-	alert := payload.Alerts[0]
-
-	// Формируем текст сообщения
-	var message string
-	if summary := alert.Annotations["summary"]; summary != "" {
-		message = summary
-	} else if desc := alert.Annotations["description"]; desc != "" {
-		message = desc
-	} else {
-		name := alert.Labels["alertname"]
-		if name == "" {
-			name = "UnknownAlert"
-		}
-		message = fmt.Sprintf("🚨 Alert: %s", name)
-	}
-
-	// Добавим статус (firing/resolved)
-	if payload.Status == "resolved" {
-		message = "✅ RESOLVED\n" + message
-	} else {
-		message = "🚨 FIRING\n" + message
-	}
-
 	botToken := os.Getenv("BOT_TOKEN")
 	chatID := os.Getenv("CHAT_ID")
 
@@ -88,34 +84,36 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	telegramURL := "https://api.telegram.org/bot" + botToken + "/sendMessage"
-	msg := map[string]string{
-		"chat_id": chatID,
-		"text":    message,
-	}
-	body, _ := json.Marshal(msg)
-
-	log.Printf("📡 Sending to Telegram: %.100s...", message)
-
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Post(telegramURL, "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		log.Printf("❌ Failed to connect to Telegram API: %v", err)
-		http.Error(w, "Failed to send", http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
 
-	respBody, _ := io.ReadAll(resp.Body)
-	log.Printf("⬅️ Telegram response: status=%d, body=%.200s", resp.StatusCode, string(respBody))
+	for _, alert := range payload.Alerts {
+		message := formatMessage(alert, payload.Status)
+		log.Printf("📡 Sending to Telegram: %.100s...", message)
 
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		msg := map[string]string{"chat_id": chatID, "text": message}
+		body, _ := json.Marshal(msg)
+
+		resp, err := client.Post(telegramURL, "application/json", bytes.NewBuffer(body))
+		if err != nil {
+			log.Printf("❌ Failed to connect to Telegram API: %v", err)
+			http.Error(w, "Failed to send", http.StatusInternalServerError)
+			return
+		}
+		respBody, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		log.Printf("⬅️ Telegram response: status=%d, body=%.200s", resp.StatusCode, string(respBody))
+
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			log.Printf("❌ Telegram API error: %s", string(respBody))
+			http.Error(w, "Telegram API error", http.StatusInternalServerError)
+			return
+		}
 		log.Println("✅ Message sent successfully to Telegram")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	} else {
-		log.Printf("❌ Telegram API error: %s", string(respBody))
-		http.Error(w, "Telegram API error", http.StatusInternalServerError)
 	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
 }
 
 func main() {
