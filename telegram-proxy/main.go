@@ -42,6 +42,8 @@ func formatMessage(alert Alert, payloadStatus string) string {
 	return "🚨 FIRING\n" + text
 }
 
+var telegramBaseURL = "https://api.telegram.org"
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -83,7 +85,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	telegramURL := "https://api.telegram.org/bot" + botToken + "/sendMessage"
+	telegramURL := telegramBaseURL + "/bot" + botToken + "/sendMessage"
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	for _, alert := range payload.Alerts {
