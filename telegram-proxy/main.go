@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 // AlertManagerWebhook — структура входящего вебхука от Alertmanager
@@ -95,7 +96,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("📡 Sending to Telegram: %.100s...", message)
 
-	resp, err := http.Post(telegramURL, "application/json", bytes.NewBuffer(body))
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Post(telegramURL, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		log.Printf("❌ Failed to connect to Telegram API: %v", err)
 		http.Error(w, "Failed to send", http.StatusInternalServerError)
