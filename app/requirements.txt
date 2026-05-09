@@ -1,7 +1,6 @@
-requests
-matplotlib
-influxdb_client
-seaborn
-scipy
-pytest
-pytest-mock
+requests==2.31.0
+matplotlib==3.9.4
+influxdb-client==1.48.0
+seaborn==0.13.2
+scipy==1.13.1
+pytest==8.4.2
