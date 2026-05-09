@@ -257,3 +257,38 @@ func TestHandler_MultipleAlerts_AllSent(t *testing.T) {
 		t.Errorf("Telegram called %d times, want 2", calls())
 	}
 }
+
+func TestHandler_MultipleAlerts_PartialFailureReturns500AfterSecondSend(t *testing.T) {
+	var n int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callNum := atomic.AddInt32(&n, 1)
+		if callNum == 1 {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"ok":true}`))
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"ok":false}`))
+	}))
+	t.Cleanup(func() {
+		ts.Close()
+		telegramBaseURL = "https://api.telegram.org"
+	})
+	telegramBaseURL = ts.URL
+
+	t.Setenv("TG_PROXY_WEBHOOK_SECRET", "")
+	t.Setenv("BOT_TOKEN", "mytoken")
+	t.Setenv("CHAT_ID", "-123")
+	a1 := Alert{Labels: map[string]string{"alertname": "A1"}, Annotations: map[string]string{"summary": "first"}}
+	a2 := Alert{Labels: map[string]string{"alertname": "A2"}, Annotations: map[string]string{"summary": "second"}}
+	req := postRequest(makePayload("firing", a1, a2))
+	rr := httptest.NewRecorder()
+	handler(rr, req)
+
+	if rr.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rr.Code)
+	}
+	if atomic.LoadInt32(&n) != 2 {
+		t.Errorf("Telegram called %d times, want 2", atomic.LoadInt32(&n))
+	}
+}
