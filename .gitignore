@@ -15,3 +15,4 @@ env/
 venv/
 build/
 develop-eggs/
+claude-report*.md
