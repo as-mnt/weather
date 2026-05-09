@@ -49,7 +49,7 @@ check-env:
 
 # Сборка
 build:
-	docker build -t $(IMAGE_REPO):$(IMAGE_TAG) .
+	docker build -t $(IMAGE_REPO):$(IMAGE_TAG) ./app
 
 push: build
 	docker push $(IMAGE_REPO):$(IMAGE_TAG)
