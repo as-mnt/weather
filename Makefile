@@ -30,6 +30,7 @@ help:
 	@echo "  make secrets          — создать Secret из .secrets/secrets.env"
 	@echo "  make sync-config      — обновить ConfigMap из $(CONFIG_SOURCE)"
 	@echo "  make test             — проверить синтаксис и импорты Python-скрипта"
+	@echo "  make test-venv        — запустить проверки Python через ./venv"
 	@echo "  make deploy           — задеплоить с IMAGE_TAG"
 	@echo "  make deploy-local     — задеплоить с тегом dev-<sha>"
 	@echo "  make logs             — показать логи"
@@ -98,6 +99,26 @@ test:
 	@echo "$(GREEN)🧪 Запуск pytest для $(APP_MAIN)$(RESET)"
 	@export PYTHONPATH=$$(pwd)/app && pytest app/test_weather.py
 	@echo "$(GREEN)✅ Все тесты пройдены$(RESET)"
+
+test-venv:
+	@if [ ! -x "./venv/bin/python" ]; then \
+		echo "❌ Не найден ./venv/bin/python"; \
+		exit 1; \
+	fi
+	@if [ ! -x "./venv/bin/pytest" ]; then \
+		echo "❌ Не найден ./venv/bin/pytest"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(APP_MAIN)" ]; then \
+		echo "❌ Основной скрипт не найден: $(APP_MAIN)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)🧪 Проверка синтаксиса $(APP_MAIN) через ./venv$(RESET)"
+	@./venv/bin/python -m py_compile $(APP_MAIN)
+	@echo "$(GREEN)✅ Синтаксис корректен$(RESET)"
+	@echo "$(GREEN)🧪 Запуск pytest через ./venv$(RESET)"
+	@export PYTHONPATH=$$(pwd)/app && ./venv/bin/pytest app/test_weather.py
+	@echo "$(GREEN)✅ Все тесты в ./venv пройдены$(RESET)"
 
 # Деплой
 deploy-local: check-env
