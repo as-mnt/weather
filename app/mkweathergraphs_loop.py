@@ -38,7 +38,14 @@ def _with_retry(fn, retries=3, backoff=2, label=""):
             delay *= 2
 
 
+_REQUIRED_VARS = ('INFLUX_URL', 'INFLUX_TOKEN', 'INFLUX_ORG', 'INFLUX_BUCKET',
+                  'NEOCITIES_URL', 'NEOCITIES_TOKEN', 'WEBHOST_URL')
+
 def get_config():
+    missing = [v for v in _REQUIRED_VARS if not os.getenv(v)]
+    if missing:
+        raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
+
     return {
         'INFLUX_URL': os.getenv('INFLUX_URL'),
         'INFLUX_TOKEN': os.getenv('INFLUX_TOKEN'),

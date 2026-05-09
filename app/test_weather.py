@@ -18,7 +18,13 @@ def mock_config():
         'INDEX_HTML': 'index.html'
     }
 
-def test_get_config_defaults(monkeypatch):
+@pytest.fixture(autouse=False)
+def required_env(monkeypatch):
+    for var in weather._REQUIRED_VARS:
+        monkeypatch.setenv(var, f'test-{var.lower()}')
+
+
+def test_get_config_defaults(monkeypatch, required_env):
     for key in ('WAIT_SECONDS', 'LOOP', 'DEBUG'):
         monkeypatch.delenv(key, raising=False)
     config = weather.get_config()
@@ -29,7 +35,7 @@ def test_get_config_defaults(monkeypatch):
     assert config['INDEX_HTML'] == 'index.html'
 
 
-def test_get_config_env_override(monkeypatch):
+def test_get_config_env_override(monkeypatch, required_env):
     monkeypatch.setenv('WAIT_SECONDS', '120')
     monkeypatch.setenv('LOOP', 'false')
     monkeypatch.setenv('DEBUG', 'true')
@@ -39,9 +45,23 @@ def test_get_config_env_override(monkeypatch):
     assert config['DEBUG'] is True
 
 
-def test_get_config_invalid_wait_seconds(monkeypatch):
+def test_get_config_invalid_wait_seconds(monkeypatch, required_env):
     monkeypatch.setenv('WAIT_SECONDS', 'not-a-number')
     with pytest.raises(ValueError):
+        weather.get_config()
+
+
+def test_get_config_missing_required_vars(monkeypatch):
+    for var in weather._REQUIRED_VARS:
+        monkeypatch.delenv(var, raising=False)
+    with pytest.raises(ValueError, match="Missing required environment variables"):
+        weather.get_config()
+
+
+def test_get_config_partial_missing_vars(monkeypatch, required_env):
+    monkeypatch.delenv('INFLUX_TOKEN', raising=False)
+    monkeypatch.delenv('NEOCITIES_URL', raising=False)
+    with pytest.raises(ValueError, match="INFLUX_TOKEN"):
         weather.get_config()
 
 
