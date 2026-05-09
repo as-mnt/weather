@@ -59,7 +59,7 @@ def upload_to_neocities(local_filename, remote_filename, api_url, api_token, web
         with open(local_filename, "rb") as f:
             files = {remote_filename: f}
             headers = {"Authorization": f"Bearer {api_token}"}
-            response = requests.post(api_url, files=files, headers=headers)
+            response = requests.post(api_url, files=files, headers=headers, timeout=(10, 30))
         fileurl = f"{webhost_url}/{remote_filename}"
         if response.status_code == 200:
             print(f"File uploaded: {fileurl}")

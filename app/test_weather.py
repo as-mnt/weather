@@ -61,7 +61,8 @@ def test_upload_to_neocities_success(mock_post, mock_config):
     mock_post.assert_called_once_with(
         mock_config['NEOCITIES_URL'],
         files=ANY,
-        headers={'Authorization': f"Bearer {mock_config['NEOCITIES_TOKEN']}"}
+        headers={'Authorization': f"Bearer {mock_config['NEOCITIES_TOKEN']}"},
+        timeout=(10, 30)
     )
 
 @pytest.mark.parametrize("status_code", [400, 401, 403, 404])
